@@ -1,0 +1,29 @@
+name: Validate Code
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: "pyproject.toml"
+
+      - name: Install Validate Dependencies
+        run: pip install -r requirements_dev.txt
+
+      - name: Validate
+        run: make validate
+
+      - name: Unit Tests
+        run: make test

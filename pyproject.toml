@@ -1,0 +1,15 @@
+[project]
+authors = [
+    {name = "James Demetris"},
+]
+name            = ""
+readme          = "README.md"
+requires-python = ">=3.12"
+dynamic         = ["version"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["personal_simple_tcl_minifier*"]
+
+[tool.setuptools.dynamic]
+version = {file = "version.txt"}

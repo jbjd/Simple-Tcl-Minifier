@@ -1,0 +1,15 @@
+# IDE
+.vscode/
+
+# Common Python Ignores
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+build/
+*.egg-info
+.venv
+.coverage
+
+*.ipynb
+test.py
