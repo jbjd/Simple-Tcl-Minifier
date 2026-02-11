@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=78.1.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+authors = [
+    {name = "James Demetris"},
+]
+name            = "personal-simple-tcl-minifier"
+readme          = "README.md"
+requires-python = ">=3.12"
+dynamic         = ["version"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["personal_simple_tcl_minifier*"]
+
+[tool.setuptools.dynamic]
+version = {file = "version.txt"}
