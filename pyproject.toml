@@ -2,7 +2,7 @@
 authors = [
     {name = "James Demetris"},
 ]
-name            = ""
+name            = "personal_simple_tcl_minifier"
 readme          = "README.md"
 requires-python = ">=3.12"
 dynamic         = ["version"]
