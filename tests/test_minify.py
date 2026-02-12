@@ -2,11 +2,13 @@ from tkinter import TclError, Tk
 
 from personal_simple_tcl_minifier.parse import tcl_minify
 
-_tk = Tk()
+
+def test_empty_string():
+    assert tcl_minify("") == ""
 
 
 def test_escaped_quote():
-    source: str = '''set someVar "escaped \\"quote\\""'''
+    source: str = 'set someVar "escaped \\"quote\\""'
     _test_minifier(source, source)
 
 
@@ -24,6 +26,25 @@ puts "Matched a"}
 b { puts "Matched b"}}"""
 
     _test_minifier(source, expected_output)
+
+
+def test_semicolon_with_whitespace():
+    source: str = """set foo "asfd"  ;
+# Comment"""
+    expected_output: str = 'set foo "asfd"'
+
+    _test_minifier(source, expected_output)
+
+
+def test_blackslash_newline():
+    source: str = """set foo \\
+    1"""
+    expected_output: str = "set foo 1"
+
+    _test_minifier(source, expected_output)
+
+
+_tk = Tk(useTk=False)
 
 
 def _test_minifier(source: str, expected_output: str) -> None:

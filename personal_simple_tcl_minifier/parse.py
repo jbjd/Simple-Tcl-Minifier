@@ -35,6 +35,7 @@ def tcl_parse(source: str) -> list[str]:
             comment_end: int = source.find("\n", token_start + 1)
             if comment_end == -1:
                 tokens.append(source[token_start:])
+                token_end = source_end
             else:
                 tokens.append(source[token_start:comment_end])
                 token_end = comment_end
@@ -52,17 +53,14 @@ def tcl_parse(source: str) -> list[str]:
             while token_end < source_end and not _is_delimiter(source[token_end]):
                 token_end += 1
             token: str = source[token_start:token_end]
-            if token == "\\" and source[token_end : token_end + 1] == "\n":
-                token_end += 1
-            else:
-                tokens.append(token)
+            tokens.append(token)
 
         token_start = token_end
 
     return tokens
 
 
-def tcl_optimize(tokens: list[str]) -> None:  # noqa:
+def tcl_optimize(tokens: list[str]) -> None:
     if not tokens:
         return
 
