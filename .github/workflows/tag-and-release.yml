@@ -1,0 +1,36 @@
+name: Tag And Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - version.txt
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  tag-and-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Version
+        id: version
+        run: |
+            version=$(cat version.txt | tr -d '\n')
+            echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: v${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$tag" \
+            --repo="$GITHUB_REPOSITORY" --latest \
+            --title="$tag" --fail-on-no-commits \
+            --generate-notes
