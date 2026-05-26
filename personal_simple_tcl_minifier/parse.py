@@ -26,38 +26,38 @@ def _tcl_parse(source: str) -> list[str]:
                         tokens[-1] = first_char
                 else:
                     tokens.append(first_char)
-
             continue
 
-        if first_char in ("[", "]", "{", "}", "\\"):
-            token_start += 1
+        if first_char in ("[", "]", "{", "}"):
             tokens.append(first_char)
+            token_start += 1
+            continue
+
+        if first_char == "\\":
+            if token_start + 1 < source_end and source[token_start + 1] == "\n":
+                if tokens and not tokens[-1][-1:].isspace():
+                    tokens.append(" ")
+                token_start += 2
+                while token_start < source_end and source[token_start].isspace():
+                    token_start += 1
+            else:
+                tokens.append(source[token_start : token_start + 2])
+                token_start += 2
             continue
 
         if _is_token_comment(first_char, tokens):
-            comment_end: int = source.find("\n", token_start + 1)
-            if comment_end == -1:
-                tokens.append(source[token_start:])
-                token_end = source_end
-            else:
-                tokens.append(source[token_start:comment_end])
-                token_end = comment_end
-        elif first_char == '"':
-            token_end = token_start + 1
-            while token_end < source_end and (
-                source[token_end] != '"' or source[token_end - 1] == "\\"
-            ):
-                token_end += 1
-            token_end += 1
-            string_token: str = source[token_start:token_end]
-            tokens.append(string_token)
-        else:
-            token_end = token_start + 1
-            while token_end < source_end and not _is_delimiter(source[token_end]):
-                token_end += 1
-            token: str = source[token_start:token_end]
-            tokens.append(token)
+            token_start = _parse_comment(source, source_end, token_start, tokens)
+            continue
 
+        if first_char == '"':
+            token_start = _parse_string(source, source_end, token_start, tokens)
+            continue
+
+        token_end = token_start + 1
+        while token_end < source_end and not _is_delimiter(source[token_end]):
+            token_end += 1
+        token: str = source[token_start:token_end]
+        tokens.append(token)
         token_start = token_end
 
     return tokens
@@ -78,19 +78,16 @@ def _tcl_optimize(tokens: list[str]) -> None:
 
         if token == "}" and new_tokens and new_tokens[-1].isspace():
             new_tokens[-1] = token
-        elif token == "\n" and (not new_tokens or new_tokens[-1] in "\n\\"):
-            if new_tokens and new_tokens[-1] == "\\":
-                if len(new_tokens) > 1 and new_tokens[-2].isspace():
-                    new_tokens.pop()
-                else:
-                    new_tokens[-1] = " "
+        elif token == "\n" and (not new_tokens or new_tokens[-1] == "\n"):
+            continue
         elif _is_token_comment(token, new_tokens):
             # https://wiki.tcl-lang.org/page/Why+can+I+not+place+unmatched+braces+in+Tcl+comments
             if depth > 0:
-                depth_change: int = token.count("{") - token.count("}")
+                open_bracket_count: int = token.count("{")
+                closed_bracket_count: int = token.count("}")
 
-                if depth_change:
-                    depth += depth_change
+                if open_bracket_count > 0 or closed_bracket_count > 0:
+                    depth += open_bracket_count - closed_bracket_count
                     new_tokens.append(token)
         else:
             new_tokens.append(token)
@@ -110,10 +107,69 @@ def _is_whitespace_or_semicolon(token: str) -> bool:
 
 
 def _is_delimiter(token: str) -> bool:
-    return token.isspace() or token in (";", "[", "]", "{", "}", "\\")
+    return token.isspace() or token in (";", "[", "]", "{", "}", "\\", '"')
 
 
 def _is_token_comment(token: str, previous_tokens: list[str]) -> bool:
     return token[0] == "#" and (
         not previous_tokens or previous_tokens[-1][-1:] in ("\n", ";")
     )
+
+
+def _parse_comment(
+    source: str, source_end: int, starting_index: int, out: list[str]
+) -> int:
+
+    skip_next: bool = False
+    for i in range(starting_index + 1, source_end):
+        this_char: str = source[i]
+        if skip_next:
+            skip_next = False
+            continue
+
+        if this_char == "\\":
+            skip_next = True
+        elif this_char == "\n":
+            break
+    else:
+        # Didn't find new line, add one to ensure last char is included
+        i += 1
+
+    out.append(source[starting_index:i])
+    return i
+
+
+def _parse_string(
+    source: str, source_end: int, starting_index: int, out: list[str]
+) -> int:
+    token_end: int = starting_index + 1
+    string_token: str = ""
+    local_start: int = starting_index
+    skip_whitespace: bool = False
+
+    while token_end < source_end and source[token_end] != '"':
+        if source[token_end] == "\\" and token_end + 1 < source_end:
+            next_char: str = source[token_end + 1]
+
+            if next_char == "\n":
+                skip_whitespace = True
+                string_token += source[local_start:token_end]
+                if not string_token[-1].isspace():
+                    string_token += " "
+                local_start = token_end
+            token_end += 2
+            continue
+
+        if source[token_end].isspace() and skip_whitespace:
+            token_end += 1
+            local_start = token_end
+            continue
+
+        skip_whitespace = False
+        token_end += 1
+
+    token_end += 1
+    string_token += source[local_start:token_end]
+    out.append(string_token)
+
+    return token_end
