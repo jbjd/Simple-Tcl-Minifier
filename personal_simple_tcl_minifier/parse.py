@@ -34,24 +34,25 @@ def _tcl_parse(source: str) -> list[str]:
             tokens.append(first_char)
             continue
 
-        token_end: int
         if _is_token_comment(first_char, tokens):
             comment_end: int = source.find("\n", token_start + 1)
             if comment_end == -1:
                 tokens.append(source[token_start:])
-                token_end = source_end
+                token_start = source_end
             else:
                 tokens.append(source[token_start:comment_end])
-                token_end = comment_end
-        elif first_char == '"':
-            token_end = _parse_string(source, source_end, token_start, tokens)
-        else:
-            token_end = token_start + 1
-            while token_end < source_end and not _is_delimiter(source[token_end]):
-                token_end += 1
-            token: str = source[token_start:token_end]
-            tokens.append(token)
+                token_start = comment_end
+            continue
 
+        if first_char == '"':
+            token_start = _parse_string(source, source_end, token_start, tokens)
+            continue
+
+        token_end = token_start + 1
+        while token_end < source_end and not _is_delimiter(source[token_end]):
+            token_end += 1
+        token: str = source[token_start:token_end]
+        tokens.append(token)
         token_start = token_end
 
     return tokens
