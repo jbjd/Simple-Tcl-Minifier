@@ -1,9 +1,4 @@
-import re
-
-
 def tcl_parse(source: str) -> list[str]:
-    source = re.sub(r"\\\n[ \t]*", " ", source)
-
     token_start: int = 0
     token_end: int = 0
     source_end: int = len(source)
@@ -26,7 +21,7 @@ def tcl_parse(source: str) -> list[str]:
 
             continue
 
-        if _is_bracket(first_char):
+        if first_char in ("[", "]", "{", "}", "\\"):
             token_start += 1
             tokens.append(first_char)
             continue
@@ -75,8 +70,12 @@ def tcl_optimize(tokens: list[str]) -> None:
 
         if token == "}" and new_tokens and new_tokens[-1].isspace():
             new_tokens[-1] = token
-        elif token == "\n" and (not new_tokens or new_tokens[-1] == "\n"):
-            pass
+        elif token == "\n" and (not new_tokens or new_tokens[-1] in "\n\\"):
+            if new_tokens and new_tokens[-1] == "\\":
+                if len(new_tokens) > 1 and new_tokens[-2].isspace():
+                    new_tokens.pop()
+                else:
+                    new_tokens[-1] = " "
         elif _is_token_comment(token, new_tokens):
             open_curly_count: int
             closing_curly_count: int
@@ -85,15 +84,10 @@ def tcl_optimize(tokens: list[str]) -> None:
             if depth > 0:
                 open_curly_count = token.count("{")
                 closing_curly_count = token.count("}")
-            else:
-                open_curly_count = 0
-                closing_curly_count = 0
 
-            if open_curly_count > 0 or closing_curly_count > 0:
-                depth += open_curly_count
-                depth -= closing_curly_count
-                new_tokens.append(token)
-                continue
+                if open_curly_count > 0 or closing_curly_count > 0:
+                    depth += open_curly_count - closing_curly_count
+                    new_tokens.append(token)
         else:
             new_tokens.append(token)
 
@@ -119,12 +113,8 @@ def _is_whitespace_or_semicolon(token: str) -> bool:
     return token.isspace() or token == ";"
 
 
-def _is_bracket(token: str) -> bool:
-    return token in ("[", "]", "{", "}")
-
-
 def _is_delimiter(token: str) -> bool:
-    return _is_whitespace_or_semicolon(token) or _is_bracket(token)
+    return token.isspace() or token in (";", "[", "]", "{", "}", "\\")
 
 
 def _is_token_comment(token: str, previous_tokens: list[str]) -> bool:

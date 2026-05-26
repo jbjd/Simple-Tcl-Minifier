@@ -1,5 +1,7 @@
 from tkinter import TclError, Tk
 
+import pytest
+
 from personal_simple_tcl_minifier.parse import tcl_minify
 
 
@@ -36,9 +38,16 @@ def test_semicolon_with_whitespace():
     _test_minifier(source, expected_output)
 
 
-def test_blackslash_newline():
-    source: str = """set foo \\
-    1"""
+@pytest.mark.parametrize(
+    "source",
+    [
+        """set foo \\
+    1""",
+        """set foo\\
+    1""",
+    ],
+)
+def test_blackslash_newline(source: str):
     expected_output: str = "set foo 1"
 
     _test_minifier(source, expected_output)
