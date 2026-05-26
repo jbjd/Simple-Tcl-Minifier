@@ -108,7 +108,7 @@ def _is_token_comment(token: str, previous_tokens: list[str]) -> bool:
 
 
 def _parse_comment(
-    source: str, source_end: int, starting_index: str, out: list[str]
+    source: str, source_end: int, starting_index: int, out: list[str]
 ) -> int:
     comment_end: int = source.find("\n", starting_index + 1)
     if comment_end == -1:
@@ -120,7 +120,7 @@ def _parse_comment(
 
 
 def _parse_string(
-    source: str, source_end: int, starting_index: str, out: list[str]
+    source: str, source_end: int, starting_index: int, out: list[str]
 ) -> int:
     token_end: int = starting_index + 1
     string_token: str = ""
