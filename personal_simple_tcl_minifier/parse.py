@@ -1,4 +1,12 @@
-def tcl_parse(source: str) -> list[str]:
+def tcl_minify(source: str) -> str:
+    tokens: list[str] = _tcl_parse(source)
+
+    _tcl_optimize(tokens)
+
+    return _tcl_unparse(tokens)
+
+
+def _tcl_parse(source: str) -> list[str]:
     token_start: int = 0
     token_end: int = 0
     source_end: int = len(source)
@@ -55,7 +63,7 @@ def tcl_parse(source: str) -> list[str]:
     return tokens
 
 
-def tcl_optimize(tokens: list[str]) -> None:
+def _tcl_optimize(tokens: list[str]) -> None:
     if not tokens:
         return
 
@@ -77,16 +85,12 @@ def tcl_optimize(tokens: list[str]) -> None:
                 else:
                     new_tokens[-1] = " "
         elif _is_token_comment(token, new_tokens):
-            open_curly_count: int
-            closing_curly_count: int
-
             # https://wiki.tcl-lang.org/page/Why+can+I+not+place+unmatched+braces+in+Tcl+comments
             if depth > 0:
-                open_curly_count = token.count("{")
-                closing_curly_count = token.count("}")
+                depth_change: int = token.count("{") - token.count("}")
 
-                if open_curly_count > 0 or closing_curly_count > 0:
-                    depth += open_curly_count - closing_curly_count
+                if depth_change:
+                    depth += depth_change
                     new_tokens.append(token)
         else:
             new_tokens.append(token)
@@ -97,16 +101,8 @@ def tcl_optimize(tokens: list[str]) -> None:
     tokens[:] = new_tokens
 
 
-def tcl_unparse(tokens: list[str]) -> str:
-    return "".join(str(token) for token in tokens)
-
-
-def tcl_minify(source: str) -> str:
-    tokens: list[str] = tcl_parse(source)
-
-    tcl_optimize(tokens)
-
-    return tcl_unparse(tokens)
+def _tcl_unparse(tokens: list[str]) -> str:
+    return "".join(tokens)
 
 
 def _is_whitespace_or_semicolon(token: str) -> bool:
