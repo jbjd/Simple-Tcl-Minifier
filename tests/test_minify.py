@@ -53,6 +53,25 @@ def test_blackslash_newline(source: str):
     _test_minifier(source, expected_output)
 
 
+def test_backslash_complex():
+    source: str = """proc ::tcl::clock::scan { args } {
+    return -code error \\
+        -errorcode [list CLOCK wrongNumArgs] \\
+        "wrong \\# args: should be\\
+        \\"$cmdName string\\
+        ?-base seconds?\\
+        ?-format string? ?-gmt boolean?\\
+        ?-locale LOCALE? ?-timezone ZONE?\\""
+}"""
+    expected_output: str = (
+        "proc ::tcl::clock::scan { args} {\n"
+        "return -code error -errorcode [list CLOCK wrongNumArgs] "
+        '"wrong \\# args: should be \\"$cmdName string ?-base seconds?'
+        ' ?-format string? ?-gmt boolean? ?-locale LOCALE? ?-timezone ZONE?\\""}'
+    )
+    _test_minifier(source, expected_output)
+
+
 _tk = Tk(useTk=False)
 
 

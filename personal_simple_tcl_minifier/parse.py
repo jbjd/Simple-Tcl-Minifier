@@ -34,6 +34,7 @@ def _tcl_parse(source: str) -> list[str]:
             tokens.append(first_char)
             continue
 
+        token_end: int
         if _is_token_comment(first_char, tokens):
             comment_end: int = source.find("\n", token_start + 1)
             if comment_end == -1:
@@ -43,14 +44,7 @@ def _tcl_parse(source: str) -> list[str]:
                 tokens.append(source[token_start:comment_end])
                 token_end = comment_end
         elif first_char == '"':
-            token_end = token_start + 1
-            while token_end < source_end and (
-                source[token_end] != '"' or source[token_end - 1] == "\\"
-            ):
-                token_end += 1
-            token_end += 1
-            string_token: str = source[token_start:token_end]
-            tokens.append(string_token)
+            token_end = _parse_string(source, source_end, token_start, tokens)
         else:
             token_end = token_start + 1
             while token_end < source_end and not _is_delimiter(source[token_end]):
@@ -117,3 +111,38 @@ def _is_token_comment(token: str, previous_tokens: list[str]) -> bool:
     return token[0] == "#" and (
         not previous_tokens or previous_tokens[-1][-1:] in ("\n", ";")
     )
+
+
+def _parse_string(
+    source: str, source_end: int, starting_index: str, out: list[str]
+) -> None:
+    token_end: int = starting_index + 1
+    string_token: str = ""
+    local_start: int = starting_index
+    skip_whitespace: bool = False
+
+    while token_end < source_end and (
+        source[token_end] != '"' or source[token_end - 1] == "\\"
+    ):
+        if source[token_end].isspace():
+            if skip_whitespace:
+                token_end += 1
+                local_start = token_end
+                continue
+            if source[token_end - 1] == "\\":
+                skip_whitespace = True
+                string_token += source[local_start : token_end - 1]
+                if not string_token[-1].isspace():
+                    string_token += " "
+                token_end += 1
+                local_start = token_end
+                continue
+
+        skip_whitespace = False
+        token_end += 1
+
+    token_end += 1
+    string_token += source[local_start:token_end]
+    out.append(string_token)
+
+    return token_end
