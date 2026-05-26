@@ -3,7 +3,7 @@ import tkinter as tk
 
 
 def get_tcl_sources(tcl_path: str) -> list[str]:
-    tcl_files: list[str] = [entry for entry in os.scandir(tcl_path) if entry.is_file()]
+    tcl_files: list = [entry for entry in os.scandir(tcl_path) if entry.is_file()]
 
     tcl_sources: list[str] = []
 
