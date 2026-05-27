@@ -118,7 +118,7 @@ _tk = Tk(useTk=False)
 
 def _test_minifier(source: str, expected_output: str) -> None:
     output: str = tcl_minify(source)
-    assert output == expected_output
+    assert output == expected_output, f"{output}\n\n---!=---\n\n{expected_output}"
 
     try:
         _tk.eval(output)

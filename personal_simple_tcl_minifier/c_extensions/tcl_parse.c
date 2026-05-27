@@ -106,8 +106,14 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
             {
             case '{':
                 ++depth;
+                break;
             case '}':
+                if (index_minified > 0 && isspace(tcl_minified[index_minified - 1]))
+                {
+                    --index_minified;
+                }
                 --depth;
+                break;
             }
             _append_char_to_minified(current_char);
         }
