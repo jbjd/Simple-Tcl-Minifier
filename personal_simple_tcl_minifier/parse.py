@@ -149,9 +149,7 @@ def _parse_string(
 
     while token_end < source_end and source[token_end] != '"':
         if source[token_end] == "\\" and token_end + 1 < source_end:
-            next_char: str = source[token_end + 1]
-
-            if next_char == "\n":
+            if source[token_end + 1] == "\n":
                 skip_whitespace = True
                 string_token += source[local_start:token_end]
                 if not string_token[-1].isspace():

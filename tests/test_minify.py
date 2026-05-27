@@ -2,7 +2,7 @@ from tkinter import TclError, Tk
 
 import pytest
 
-from personal_simple_tcl_minifier.parse import tcl_minify
+from personal_simple_tcl_minifier._parse import tcl_minify
 
 
 def test_empty_string():
@@ -43,6 +43,12 @@ def test_comment_with_backslash():
               a comment
 puts "asdf"'''
     expected_output: str = 'puts "asdf"'
+    _test_minifier(source, expected_output)
+
+
+def test_comment_with_backslash_at_end():
+    source: str = "# This is all \\"
+    expected_output: str = ""
     _test_minifier(source, expected_output)
 
 
