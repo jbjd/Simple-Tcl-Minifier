@@ -52,6 +52,17 @@ def test_comment_with_backslash_at_end():
     _test_minifier(source, expected_output)
 
 
+def test_comment_in_function():
+    source: str = """
+proc do {some} {
+    # foo bar
+    return 0}"""
+    expected_output: str = """
+proc do {some} {
+return 0}""".strip()
+    _test_minifier(source, expected_output)
+
+
 @pytest.mark.parametrize(
     "source",
     [
