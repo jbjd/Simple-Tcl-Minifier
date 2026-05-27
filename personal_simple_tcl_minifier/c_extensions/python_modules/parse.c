@@ -45,12 +45,12 @@ static PyModuleDef_Slot parse_slots[] = {
 
 static struct PyModuleDef parse_module = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "_parse",
+    .m_name = "parse",
     .m_size = 0,
     .m_methods = parse_methods,
     .m_slots = parse_slots};
 
-PyMODINIT_FUNC PyInit__parse(void)
+PyMODINIT_FUNC PyInit_parse(void)
 {
     return PyModuleDef_Init(&parse_module);
 }
