@@ -53,17 +53,16 @@ static inline bool _is_string(char c)
     return c == '"';
 }
 
-#define _append_char_to_minified(c)       \
-    {                                     \
-        tcl_minified[index_minified] = c; \
-        ++index_minified;                 \
-        ++index_source;                   \
+#define _append_char_to_minified(c)         \
+    {                                       \
+        tcl_minified[index_minified++] = c; \
+        ++index_source;                     \
     }
-#define _append_range_to_minified(s, e)                                        \
-    {                                                                          \
-        size_t token_len = index_source - start;                               \
-        strncpy(tcl_minified + index_minified, tcl_source + start, token_len); \
-        index_minified += token_len;                                           \
+#define _append_range_to_minified(s, e)                                      \
+    {                                                                        \
+        const size_t __token_len = e - s;                                    \
+        strncpy(tcl_minified + index_minified, tcl_source + s, __token_len); \
+        index_minified += __token_len;                                       \
     }
 
 char *tcl_minify(const char *tcl_source, size_t source_len)
@@ -210,6 +209,10 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
                         {
                             skip_whitespace = true;
                             _append_range_to_minified(start, index_source - 1);
+                            if (index_minified > 0 && !isspace(tcl_minified[index_minified - 1]))
+                            {
+                                _append_char_to_minified(' ');
+                            }
                             start = ++index_source;
                         }
                         else
