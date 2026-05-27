@@ -65,7 +65,7 @@ static inline bool _is_string(char c)
         strncpy(tcl_minified + index_minified, tcl_source + start, token_len); \
         index_minified += token_len;                                           \
     }
-#include <stdio.h>
+
 char *tcl_minify(const char *tcl_source, size_t source_len)
 {
     size_t index_source = 0;
@@ -185,11 +185,8 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
             size_t start = index_source++;
             bool skip_whitespace = false;
 
-            printf("string\n");
-
             while (index_source < source_len)
             {
-                printf("%s\n", tcl_minified);
                 char string_current_char = tcl_source[index_source];
                 if (skip_whitespace && isspace(string_current_char))
                 {
@@ -216,7 +213,7 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
                     }
                     break;
 
-                case '\n':
+                case '"':
                     goto string_while_end;
 
                 default:

@@ -20,7 +20,7 @@ else
 	override PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/python$(PYTHON_VERSION)/
 endif
 
-OPTIMIZATION_FLAG := -O3
+OPTIMIZATION_FLAG := -O0
 override SOURCE := personal_simple_tcl_minifier
 override C_SOURCE := $(SOURCE)/c_extensions
 override C_INCLUDES := $(C_SOURCE)/includes
