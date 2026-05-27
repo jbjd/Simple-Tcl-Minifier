@@ -36,7 +36,7 @@ validate:
 	codespell image_viewer tests compile_utils compile.py .ruff.toml README.md
 
 build-parse:
-	gcc $(C_PYTHON_MODULES)/parse.c $(C_SOURCE)/tcl_parse.c $(C_FLAGS) -I$(C_INCLUDES) -o $(SOURCE)/_parse.$(COMPILED_EXT)
+	gcc $(C_PYTHON_MODULES)/parse.c $(C_SOURCE)/tcl_parse.c $(C_FLAGS) -I$(C_INCLUDES) -o $(SOURCE)/parse.$(COMPILED_EXT)
 
 test:
 	pytest --cov=$(SOURCE) --cov-report term-missing

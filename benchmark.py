@@ -17,7 +17,7 @@ def get_tcl_sources(tcl_path: str) -> list[str]:
 if __name__ == "__main__":
     import timeit
 
-    from personal_simple_tcl_minifier._parse import tcl_minify  # noqa: F401
+    from personal_simple_tcl_minifier.parse import tcl_minify  # noqa: F401
 
     tcl_path: str = tk.Tcl().eval("info library")
 

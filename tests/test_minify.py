@@ -2,7 +2,7 @@ from tkinter import TclError, Tk
 
 import pytest
 
-from personal_simple_tcl_minifier._parse import tcl_minify
+from personal_simple_tcl_minifier.parse import tcl_minify
 
 
 def test_empty_string():
