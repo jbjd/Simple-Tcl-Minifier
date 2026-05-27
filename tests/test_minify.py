@@ -14,6 +14,17 @@ def test_escaped_quote():
     _test_minifier(source, source)
 
 
+def test_semicolon():
+    source: str = """
+proc a {} {
+    set a 1; # a
+}"""
+    expected_output: str = """proc a {} {
+set a 1}"""
+
+    _test_minifier(source, expected_output)
+
+
 def test_semicolon_with_whitespace():
     source: str = """set foo "asfd"  ;
 # Comment"""
