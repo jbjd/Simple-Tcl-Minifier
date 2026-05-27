@@ -42,10 +42,10 @@ static inline bool _is_delimiter(char c)
     }
 }
 
-static inline bool _is_comment(char c, const char *tcl_source, int index_source)
+static inline bool _is_comment(char c, const char *tcl_minified, int index_minified)
 {
     // TODO: See if this can be more generous then just newline/semicolon
-    return c == '#' && (index_source == 0 || tcl_source[index_source - 1] == '\n' || tcl_source[index_source - 1] == ';');
+    return c == '#' && (index_minified == 0 || tcl_minified[index_minified - 1] == '\n' || tcl_minified[index_minified - 1] == ';');
 }
 
 static inline bool _is_string(char c)
@@ -143,7 +143,7 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
                 }
             }
         }
-        else if (_is_comment(current_char, tcl_source, index_source))
+        else if (_is_comment(current_char, tcl_minified, index_minified))
         {
             const size_t start = index_source++;
             int open_bracket_count = 0;

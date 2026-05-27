@@ -26,14 +26,14 @@ def test_comment_with_brackets():
     source: str = """#This comment can be removed {{{
 switch b {
     # match a {
-     puts "Matched a" }
-    b { puts "Matched b" }
+     set a "Matched a" }
+    b { set a "Matched b" }
 }
 """
     expected_output: str = """switch b {
 # match a {
-puts "Matched a"}
-b { puts "Matched b"}}"""
+set a "Matched a"}
+b { set a "Matched b"}}"""
 
     _test_minifier(source, expected_output)
 
@@ -41,8 +41,8 @@ b { puts "Matched b"}}"""
 def test_comment_with_backslash():
     source: str = '''# This is all \\
               a comment
-puts "asdf"'''
-    expected_output: str = 'puts "asdf"'
+set a "asdf"'''
+    expected_output: str = 'set a "asdf"'
     _test_minifier(source, expected_output)
 
 
@@ -79,17 +79,17 @@ def test_blackslash_newline(source: str):
 
 
 def test_backslash_space():
-    source: str = '''puts "world  \\ 
+    source: str = '''set a "world  \\ 
               t"'''  # noqa: W291
-    expected_output: str = '''puts "world  \\ 
+    expected_output: str = '''set a "world  \\ 
               t"'''  # noqa: W291
     _test_minifier(source, expected_output)
 
 
 def test_backslash_literal():
-    source: str = '''puts "world  \\\\
+    source: str = '''set s "world  \\\\
               t"'''
-    expected_output: str = '''puts "world  \\\\
+    expected_output: str = '''set s "world  \\\\
               t"'''
     _test_minifier(source, expected_output)
 
