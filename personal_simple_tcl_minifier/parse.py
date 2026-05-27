@@ -107,7 +107,7 @@ def _is_whitespace_or_semicolon(token: str) -> bool:
 
 
 def _is_delimiter(token: str) -> bool:
-    return token.isspace() or token in (";", "[", "]", "{", "}", "\\")
+    return token.isspace() or token in (";", "[", "]", "{", "}", "\\", '"')
 
 
 def _is_token_comment(token: str, previous_tokens: list[str]) -> bool:
@@ -147,24 +147,22 @@ def _parse_string(
     local_start: int = starting_index
     skip_whitespace: bool = False
 
-    while token_end < source_end and (
-        source[token_end] != '"' or source[token_end - 1] == "\\"
-    ):
-        if source[token_end].isspace() and skip_whitespace:
-            token_end += 1
-            local_start = token_end
-            continue
+    while token_end < source_end and source[token_end] != '"':
+        if source[token_end] == "\\" and token_end + 1 < source_end:
+            next_char: str = source[token_end + 1]
 
-        if source[token_end] == "\\":
-            if token_end + 1 < source_end and source[token_end + 1] == "\n":
+            if next_char == "\n":
                 skip_whitespace = True
                 string_token += source[local_start:token_end]
                 if not string_token[-1].isspace():
                     string_token += " "
-                token_end += 2
                 local_start = token_end
-            else:
-                token_end += 2
+            token_end += 2
+            continue
+
+        if source[token_end].isspace() and skip_whitespace:
+            token_end += 1
+            local_start = token_end
             continue
 
         skip_whitespace = False
