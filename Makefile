@@ -17,7 +17,7 @@ ifeq ($(OS),Windows_NT)
 	override PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/
 	override PYTHON_DLL := $(shell $(PYTHON) -c "print('$(PYTHON_VERSION)'.replace('.',''))")
 else
-	override PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/libs/python$(PYTHON_VERSION)/
+	override PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/lib/python$(PYTHON_VERSION)/
 	override PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/python$(PYTHON_VERSION)/
 	override PYTHON_DLL := $(PYTHON_VERSION)
 endif
