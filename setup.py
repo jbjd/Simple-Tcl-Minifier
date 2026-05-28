@@ -17,7 +17,7 @@ parse_extension = Extension(
     name=f"{PACKAGE}.parse",
     sources=[
         f"{C_FOLDER}/python_modules/parse.c",
-        f"{C_FOLDER}/tcl_parse.c",
+        f"{C_FOLDER}/parse.c",
     ],
     extra_compile_args=["-O3", "-march=native", "-mtune=native", "-Wall"],
 )
