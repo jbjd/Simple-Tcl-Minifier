@@ -19,8 +19,15 @@ jobs:
         with:
           python-version-file: "pyproject.toml"
 
+      - name: See
+        run: |
+          cd /opt/hostedtoolcache/Python/3.14.5/x64/
+          ls -R
+
       - name: Install Validate Dependencies
-        run: pip install -r requirements_dev.txt
+        run: |
+          pip install -r requirements_dev.txt
+          make build-parse
 
       - name: Validate
         run: make validate
