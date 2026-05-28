@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include "../includes/c_optimizations.h"
-#include "../includes/tcl_parse.h"
+#include "../includes/parse.h"
 
 static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg)
 {
