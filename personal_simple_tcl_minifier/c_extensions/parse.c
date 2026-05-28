@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "includes/tcl_parse.h"
+#include "includes/parse.h"
 
 static inline bool _is_backslash(char c)
 {
@@ -87,17 +87,14 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
                     {
                         tcl_minified[index_minified - 1] = current_char;
                     }
-                    ++index_source;
                 }
                 else
                 {
-                    _append_char_to_minified(current_char);
+                    tcl_minified[index_minified++] = current_char;
                 }
             }
-            else
-            {
-                ++index_source;
-            }
+
+            ++index_source;
         }
         else if (_is_bracket(current_char))
         {
