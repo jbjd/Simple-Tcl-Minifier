@@ -26,7 +26,7 @@ override C_SOURCE := $(SOURCE)/c_extensions
 override C_INCLUDES := $(C_SOURCE)/includes
 override C_PYTHON_MODULES := $(C_SOURCE)/python_modules
 
-C_FLAGS := -L$(PYTHON_LIBS) -I$(PYTHON_INCLUDES) -lpython3 $(OPTIMIZATION_FLAG) -march=native -mtune=native -ffinite-math-only -fgcse-las -fgcse-sm -fisolate-erroneous-paths-attribute -fno-signed-zeros -frename-registers -fsched-pressure -s -shared -Wall -Werror $(OS_FLAGS)
+C_FLAGS := -L$(PYTHON_LIBS) -I$(PYTHON_INCLUDES) -lpython3 $(OPTIMIZATION_FLAG) -march=native -mtune=native -s -shared -Wall -Werror $(OS_FLAGS)
 
 
 validate:
