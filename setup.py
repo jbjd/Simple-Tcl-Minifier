@@ -2,8 +2,6 @@ import os
 
 from setuptools import Extension, setup
 
-os.environ["CC"] = "gcc"
-
 PACKAGE: str = "personal_simple_tcl_minifier"
 C_FOLDER: str = f"{PACKAGE}/c_extensions"
 
