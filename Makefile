@@ -15,7 +15,7 @@ PYTHON_VERSION := $(shell $(PYTHON) -c "import sys;print('.'.join(str(a) for a i
 ifeq ($(OS),Windows_NT)
 	override PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/libs/
 	override PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/
-	override PYTHON_DLL := $(shell $(PYTHON) -c "import sys;print(''.join(str(a) for a in sys.version_info[:2]))")
+	override PYTHON_DLL := $(shell $(PYTHON) -c "print('$(PYTHON_VERSION)'.replace('.',''))")
 else
 	override PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/libs/python$(PYTHON_VERSION)/
 	override PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/python$(PYTHON_VERSION)/
