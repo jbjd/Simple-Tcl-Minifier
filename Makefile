@@ -15,11 +15,11 @@ PYTHON_VERSION := $(shell $(PYTHON) -c "import sys;print('.'.join(str(a) for a i
 ifeq ($(OS),Windows_NT)
 	override PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/libs/
 	override PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/
-	override PYTHON_DLL := $(shell $(PYTHON) -c "print('$(PYTHON_VERSION)'.replace('.',''))")
+	override PYTHON_DLL := python$(shell $(PYTHON) -c "print('$(PYTHON_VERSION)'.replace('.',''))")
 else
 	override PYTHON_LIBS := $(PYTHON_BASE_PREFIX)/lib/python$(PYTHON_VERSION)/
 	override PYTHON_INCLUDES := $(PYTHON_BASE_PREFIX)/include/python$(PYTHON_VERSION)/
-	override PYTHON_DLL := $(PYTHON_VERSION)
+	override PYTHON_DLL := libpython$(PYTHON_VERSION)
 endif
 
 OPTIMIZATION_FLAG := -O0
@@ -28,7 +28,7 @@ override C_SOURCE := $(SOURCE)/c_extensions
 override C_INCLUDES := $(C_SOURCE)/includes
 override C_PYTHON_MODULES := $(C_SOURCE)/python_modules
 
-C_FLAGS := -L$(PYTHON_LIBS) -I$(PYTHON_INCLUDES) -lpython$(PYTHON_DLL) $(OPTIMIZATION_FLAG) -march=native -mtune=native -s -shared -Wall -Werror $(OS_FLAGS)
+C_FLAGS := -L$(PYTHON_LIBS) -I$(PYTHON_INCLUDES) -l$(PYTHON_DLL) $(OPTIMIZATION_FLAG) -march=native -mtune=native -s -shared -Wall -Werror $(OS_FLAGS)
 
 
 validate:
