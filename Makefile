@@ -1,3 +1,5 @@
+
+
 validate:
 	ruff check .
 	ruff format --check
@@ -8,4 +10,4 @@ build-parse:
 	python setup.py build_ext --inplace
 
 test:
-	pytest
+	python -m unittest discover tests
