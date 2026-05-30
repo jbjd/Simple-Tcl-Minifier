@@ -1,5 +1,3 @@
-
-
 validate:
 	ruff check .
 	ruff format --check
