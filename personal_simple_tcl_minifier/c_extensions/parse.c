@@ -235,9 +235,6 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
         --index_minified;
     }
 
-    if (size_out != NULL)
-    {
-        *size_out = index_minified;
-    }
+    *size_out = index_minified;
     return tcl_minified;
 }
