@@ -17,9 +17,10 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    char *minified_source = tcl_minify(source, size);
+    size_t minified_size;
+    char *minified_source = tcl_minify(source, size, &minified_size);
 
-    PyObject *out = PyUnicode_FromString(minified_source);
+    PyObject *out = PyUnicode_FromStringAndSize(minified_source, minified_size);
 
     free(minified_source);
 

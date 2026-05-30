@@ -65,15 +65,15 @@ static inline bool _is_string(char c)
         index_minified += __token_len;                                       \
     }
 
-char *tcl_minify(const char *tcl_source, size_t source_len)
+char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
 {
     size_t index_source = 0;
-    char *tcl_minified = malloc((sizeof(char) * source_len) + 1);
+    char *tcl_minified = malloc((sizeof(char) * size));
     size_t index_minified = 0;
 
     int depth = 0;
 
-    while (index_source < source_len)
+    while (index_source < size)
     {
         char current_char = tcl_source[index_source];
 
@@ -117,7 +117,7 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
         {
             _append_char_to_minified('\\');
 
-            if (index_source < source_len)
+            if (index_source < size)
             {
                 if (tcl_source[index_source] == '\n')
                 {
@@ -132,7 +132,7 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
                     do
                     {
                         ++index_source;
-                    } while (index_source < source_len && isspace(tcl_source[index_source]));
+                    } while (index_source < size && isspace(tcl_source[index_source]));
                 }
                 else
                 {
@@ -145,12 +145,12 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
             const size_t start = index_source++;
             int open_bracket_count = 0;
             int close_bracket_count = 0;
-            while (index_source < source_len)
+            while (index_source < size)
             {
                 switch (tcl_source[index_source])
                 {
                 case '\\':
-                    if (index_source + 1 < source_len)
+                    if (index_source + 1 < size)
                     {
                         ++index_source;
                     }
@@ -187,7 +187,7 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
             size_t start = index_source++;
             bool skip_whitespace = false;
 
-            while (index_source < source_len)
+            while (index_source < size)
             {
                 char string_current_char = tcl_source[index_source];
                 if (skip_whitespace && isspace(string_current_char))
@@ -200,7 +200,7 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
                 {
                 case '\\':
                     ++index_source;
-                    if (index_source < source_len)
+                    if (index_source < size)
                     {
                         if (tcl_source[index_source] == '\n')
                         {
@@ -235,7 +235,7 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
         else
         {
             const size_t start = index_source++;
-            while (index_source < source_len && !_is_delimiter(tcl_source[index_source]))
+            while (index_source < size && !_is_delimiter(tcl_source[index_source]))
             {
                 ++index_source;
             }
@@ -248,6 +248,9 @@ char *tcl_minify(const char *tcl_source, size_t source_len)
         --index_minified;
     }
 
-    tcl_minified[index_minified] = '\0';
+    if (size_out != NULL)
+    {
+        *size_out = index_minified;
+    }
     return tcl_minified;
 }
