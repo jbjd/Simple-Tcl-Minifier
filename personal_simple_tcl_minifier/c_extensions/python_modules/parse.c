@@ -5,6 +5,11 @@
 
 #include <stdlib.h>
 
+#ifdef _WIN32
+#define ftruncate _chsize
+#define fileno _fileno
+#endif
+
 #include "../includes/c_optimizations.h"
 #include "../includes/parse.h"
 
@@ -35,7 +40,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    FILE *fp = fopen(path, "r");
+    FILE *fp = fopen(path, "r+");
     if (fp == NULL)
     {
         PyErr_SetString(PyExc_OSError, "Error opening TCL file to read");
@@ -71,12 +76,8 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg)
     size_t minified_size;
     char *minified_source = tcl_minify(source, read_bytes, &minified_size);
 
-    fp = fopen(path, "w");
-    if (fp == NULL)
-    {
-        PyErr_SetString(PyExc_OSError, "Error opening TCL file to write");
-        return NULL;
-    }
+    ftruncate(fileno(fp), 0);
+    rewind(fp);
 
     const size_t written_bytes = fwrite(minified_source, sizeof(char), minified_size, fp);
     fclose(fp);
