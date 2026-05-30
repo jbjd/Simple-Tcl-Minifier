@@ -91,6 +91,13 @@ def test_blackslash_newline(source: str):
     _test_minifier(source, expected_output)
 
 
+def test_backslash_newline():
+    source: str = '''set a "world\\
+t"'''
+    expected_output: str = '''set a "world t"'''
+    _test_minifier(source, expected_output)
+
+
 def test_backslash_space():
     source: str = '''set a "world  \\ 
               t"'''  # noqa: W291

@@ -53,11 +53,6 @@ static inline bool _is_string(char c)
     return c == '"';
 }
 
-#define _append_char_to_minified(c)         \
-    {                                       \
-        tcl_minified[index_minified++] = c; \
-        ++index_source;                     \
-    }
 #define _append_range_to_minified(s, e)                                      \
     {                                                                        \
         const size_t __token_len = e - s;                                    \
@@ -111,7 +106,8 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                 --depth;
                 break;
             }
-            _append_char_to_minified(current_char);
+            tcl_minified[index_minified++] = current_char;
+            ++index_source;
         }
         else if (_is_backslash(current_char))
         {
@@ -133,7 +129,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                 else
                 {
                     tcl_minified[index_minified++] = '\\';
-                    _append_char_to_minified(tcl_source[index_source]);
+                    tcl_minified[index_minified++] = tcl_source[index_source++];
                 }
             }
             else
@@ -180,16 +176,10 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
         else if (_is_string(current_char))
         {
             size_t start = index_source++;
-            bool skip_whitespace = false;
 
             while (index_source < size)
             {
                 char string_current_char = tcl_source[index_source];
-                if (skip_whitespace && isspace(string_current_char))
-                {
-                    start = ++index_source;
-                    continue;
-                }
 
                 switch (string_current_char)
                 {
@@ -199,13 +189,16 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                     {
                         if (tcl_source[index_source] == '\n')
                         {
-                            skip_whitespace = true;
                             _append_range_to_minified(start, index_source - 1);
                             if (index_minified > 0 && !isspace(tcl_minified[index_minified - 1]))
                             {
-                                _append_char_to_minified(' ');
+                                tcl_minified[index_minified++] = ' ';
                             }
-                            start = ++index_source;
+                            do
+                            {
+                                ++index_source;
+                            } while (index_source < size && isspace(tcl_source[index_source]));
+                            start = index_source;
                         }
                         else
                         {
@@ -219,7 +212,6 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                     goto string_while_end;
 
                 default:
-                    skip_whitespace = false;
                     ++index_source;
                     break;
                 }
