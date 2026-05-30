@@ -81,6 +81,8 @@ return 0}""".strip()
     1""",
         """set foo\\
     1""",
+        """\\
+set foo 1""",
     ],
 )
 def test_blackslash_newline(source: str):
@@ -135,14 +137,21 @@ def test_backslash_complex():
     _test_minifier(source, expected_output)
 
 
+def test_broken_string():
+    source: str = '"asdf'
+    expected_output: str = '"asdf'
+    _test_minifier(source, expected_output, False)
+
+
 _tk = Tk(useTk=False)
 
 
-def _test_minifier(source: str, expected_output: str) -> None:
+def _test_minifier(source: str, expected_output: str, validate: bool = True) -> None:
     output: str = tcl_minify(source)
     assert output == expected_output, f"{output}\n\n---!=---\n\n{expected_output}"
 
-    try:
-        _tk.eval(output)
-    except TclError as e:
-        raise ValueError("Minified Tcl output not valid") from e
+    if validate:
+        try:
+            _tk.eval(output)
+        except TclError as e:
+            raise ValueError("Minified Tcl output not valid") from e

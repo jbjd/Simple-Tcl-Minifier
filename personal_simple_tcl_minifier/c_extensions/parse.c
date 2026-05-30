@@ -115,37 +115,38 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
         }
         else if (_is_backslash(current_char))
         {
-            _append_char_to_minified('\\');
-
+            ++index_source;
             if (index_source < size)
             {
                 if (tcl_source[index_source] == '\n')
                 {
-                    if (index_minified > 1 && !isspace(tcl_minified[index_minified - 2]))
+                    if (index_minified > 0 && !isspace(tcl_minified[index_minified - 1]))
                     {
-                        tcl_minified[index_minified - 1] = ' ';
+                        tcl_minified[index_minified++] = ' ';
                     }
-                    else
-                    {
-                        --index_minified;
-                    }
-                    do
+
+                    while (index_source < size && isspace(tcl_source[index_source]))
                     {
                         ++index_source;
-                    } while (index_source < size && isspace(tcl_source[index_source]));
+                    }
                 }
                 else
                 {
+                    tcl_minified[index_minified++] = '\\';
                     _append_char_to_minified(tcl_source[index_source]);
                 }
+            }
+            else
+            {
+                tcl_minified[index_minified++] = '\\';
             }
         }
         else if (_is_comment(current_char, tcl_minified, index_minified))
         {
-            const size_t start = index_source++;
+            const size_t start = index_source;
             int open_bracket_count = 0;
             int close_bracket_count = 0;
-            while (index_source < size)
+            while (++index_source < size)
             {
                 switch (tcl_source[index_source])
                 {
@@ -154,7 +155,6 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                     {
                         ++index_source;
                     }
-                    ++index_source;
                     break;
 
                 case '\n':
@@ -162,14 +162,9 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
 
                 case '{':
                     ++open_bracket_count;
-                    ++index_source;
                     break;
                 case '}':
                     ++close_bracket_count;
-                    ++index_source;
-                    break;
-                default:
-                    ++index_source;
                     break;
                 }
             }
@@ -220,6 +215,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                     break;
 
                 case '"':
+                    ++index_source;
                     goto string_while_end;
 
                 default:
@@ -229,7 +225,6 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                 }
             }
         string_while_end:
-            ++index_source;
             _append_range_to_minified(start, index_source)
         }
         else
