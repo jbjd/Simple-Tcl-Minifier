@@ -17,44 +17,18 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg)
         return NULL;
     }
 
-    char *minified_source = tcl_minify(source, size);
+    size_t minified_size;
+    char *minified_source = tcl_minify(source, size, &minified_size);
 
-    PyObject *out = PyUnicode_FromString(minified_source);
+    PyObject *out = PyUnicode_FromStringAndSize(minified_source, minified_size);
 
     free(minified_source);
 
     return out;
 }
 
-static PyObject *Py_tcl_minify_to_file(PyObject *self, PyObject *args)
-{
-    Py_ssize_t size;
-    const char *source;
-    const char *path;
-
-    if (unlikely(!PyArg_ParseTuple(args, "s#s", &source, &size, &path)))
-    {
-        return NULL;
-    }
-
-    char *minified_source = tcl_minify(source, size);
-
-    FILE *fp = fopen("file.txt", "w");
-    if (fp == NULL)
-    {
-        PyErr_SetString(PyExc_OSError, "Failed to open file");
-        return NULL;
-    }
-
-    fprintf(fp, minified_source);
-    free(minified_source);
-
-    return Py_None;
-}
-
 static PyMethodDef parse_methods[] = {
     {"tcl_minify", Py_tcl_minify, METH_O, NULL},
-    {"tcl_minify_to_file", Py_tcl_minify_to_file, METH_VARARGS, NULL},
     {NULL, NULL, 0, NULL}};
 
 static int parse_exec(PyObject *Py_UNUSED(module))
