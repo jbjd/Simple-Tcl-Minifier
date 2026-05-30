@@ -53,11 +53,11 @@ static inline bool _is_string(char c)
     return c == '"';
 }
 
-#define _append_range_to_minified(s, e)                                      \
-    {                                                                        \
-        const size_t __token_len = e - s;                                    \
-        strncpy(tcl_minified + index_minified, tcl_source + s, __token_len); \
-        index_minified += __token_len;                                       \
+#define _APPEND_RANGE(_s, _e)                                                 \
+    {                                                                         \
+        const size_t __token_len = _e - _s;                                   \
+        strncpy(tcl_minified + index_minified, tcl_source + _s, __token_len); \
+        index_minified += __token_len;                                        \
     }
 
 char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
@@ -170,7 +170,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
             if (depth > 0 && (open_bracket_count || close_bracket_count))
             {
                 depth += open_bracket_count - close_bracket_count;
-                _append_range_to_minified(start, index_source)
+                _APPEND_RANGE(start, index_source)
             }
         }
         else if (_is_string(current_char))
@@ -189,7 +189,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                     {
                         if (tcl_source[index_source] == '\n')
                         {
-                            _append_range_to_minified(start, index_source - 1);
+                            _APPEND_RANGE(start, index_source - 1);
                             if (index_minified > 0 && !isspace(tcl_minified[index_minified - 1]))
                             {
                                 tcl_minified[index_minified++] = ' ';
@@ -217,7 +217,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
                 }
             }
         string_while_end:
-            _append_range_to_minified(start, index_source)
+            _APPEND_RANGE(start, index_source)
         }
         else
         {
@@ -226,7 +226,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out)
             {
                 ++index_source;
             }
-            _append_range_to_minified(start, index_source)
+            _APPEND_RANGE(start, index_source)
         }
     }
 

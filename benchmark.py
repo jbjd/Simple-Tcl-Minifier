@@ -22,14 +22,14 @@ if __name__ == "__main__":
     tcl_path: str = tk.Tcl().eval("info library")
 
     tcl_sources: list[str] = get_tcl_sources(tcl_path)
-    INTERATIONS: int = 10
+    ITERATIONS: int = 10
 
     duration: float = timeit.timeit(
         """
 for s in tcl_sources:
     tcl_minify(s)
 """,
-        number=INTERATIONS,
+        number=ITERATIONS,
         globals=globals(),
     )
 
@@ -37,4 +37,4 @@ for s in tcl_sources:
         version: str = fp.read().strip()
 
     print(f"v{version} -", "Parsed tcl files in", tcl_path)
-    print(INTERATIONS, "iterations took:", duration)
+    print(ITERATIONS, "iterations took:", duration)
