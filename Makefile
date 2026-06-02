@@ -1,7 +1,13 @@
+C_AND_H_FILES = $(shell python -c "from glob import glob;print(' '.join(glob('personal_simple_tcl_minifier/**/*.[ch]',recursive=True)))")
+
+format:
+	ruff check . --fix
+	clang-format -i $(C_AND_H_FILES)
+
 validate:
 	ruff check .
 	ruff format --check
-	mypy . --check-untyped-defs
+	clang-format -n -Werror $(C_AND_H_FILES)
 	codespell .
 
 build-parse:

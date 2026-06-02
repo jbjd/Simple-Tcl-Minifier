@@ -1,8 +1,11 @@
 #define Py_LIMITED_API 0x030c0000
 #define PY_SSIZE_T_CLEAN
 
-#include <Python.h>
+#include "../includes/parse.h"
 
+#include "../includes/c_optimizations.h"
+
+#include <Python.h>
 #include <stdlib.h>
 
 #ifdef _WIN32
@@ -10,15 +13,10 @@
 #define fileno _fileno
 #endif
 
-#include "../includes/c_optimizations.h"
-#include "../includes/parse.h"
-
-static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg)
-{
+static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
     Py_ssize_t size;
     const char *source = PyUnicode_AsUTF8AndSize(arg, &size);
-    if (unlikely(source == NULL))
-    {
+    if (unlikely(source == NULL)) {
         return NULL;
     }
 
@@ -32,17 +30,14 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg)
     return out;
 }
 
-static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg)
-{
+static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
-    if (unlikely(path == NULL))
-    {
+    if (unlikely(path == NULL)) {
         return NULL;
     }
 
     FILE *fp = fopen(path, "r+");
-    if (fp == NULL)
-    {
+    if (fp == NULL) {
         PyErr_SetString(PyExc_OSError, "Error opening TCL file to read");
         return NULL;
     }
@@ -51,23 +46,20 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg)
     const long file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
 
-    if (unlikely(file_size < 0))
-    {
+    if (unlikely(file_size < 0)) {
         PyErr_SetString(PyExc_OSError, "Error telling TCL file");
         fclose(fp);
         return NULL;
     }
 
     char *source = (char *)malloc(file_size * sizeof(char));
-    if (unlikely(source == NULL))
-    {
+    if (unlikely(source == NULL)) {
         fclose(fp);
         return NULL;
     }
 
     const size_t read_bytes = fread(source, sizeof(char), file_size, fp);
-    if (unlikely(!feof(fp)))
-    {
+    if (unlikely(!feof(fp))) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error reading TCL file");
         return NULL;
@@ -83,8 +75,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg)
     fclose(fp);
     free(minified_source);
 
-    if (written_bytes != minified_size)
-    {
+    if (written_bytes != minified_size) {
         PyErr_SetString(PyExc_OSError, "Error writing TCL file");
         return NULL;
     }
@@ -97,8 +88,7 @@ static PyMethodDef parse_methods[] = {
     {"tcl_minify_file", Py_tcl_minify_file, METH_O, NULL},
     {NULL, NULL, 0, NULL}};
 
-static int parse_exec(PyObject *Py_UNUSED(module))
-{
+static int parse_exec(PyObject *Py_UNUSED(module)) {
     return 0;
 }
 
@@ -108,16 +98,17 @@ static PyModuleDef_Slot parse_slots[] = {
 #ifdef Py_GIL_DISABLED
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
 #endif
-    {0, NULL}};
+    {0, NULL},
+};
 
 static struct PyModuleDef parse_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "parse",
     .m_size = 0,
     .m_methods = parse_methods,
-    .m_slots = parse_slots};
+    .m_slots = parse_slots,
+};
 
-PyMODINIT_FUNC PyInit_parse(void)
-{
+PyMODINIT_FUNC PyInit_parse(void) {
     return PyModuleDef_Init(&parse_module);
 }

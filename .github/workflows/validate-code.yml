@@ -20,12 +20,12 @@ jobs:
           python-version-file: "pyproject.toml"
 
       - name: Install Validate Dependencies
-        run: |
-          pip install -r requirements_dev.txt
-          make build-parse
+        run: pip install -r requirements_dev.txt
 
       - name: Validate
         run: make validate
 
       - name: Unit Tests
-        run: make test
+        run: |
+          make build-parse
+          make test
