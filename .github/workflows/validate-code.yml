@@ -15,9 +15,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Check C Formatting
-        run: |
-          sudo apt install clang-format
-          find personal_simple_tcl_minifier/ -iname '*.c' -o -iname '*.h' | xargs clang-format -n -Werror
+        run: pipx run --spec clang-format==23.* clang-format -n -Werror $(find personal_simple_tcl_minifier/ -name "*.c" -o -name "*.h")
 
       - name: Set up Python
         uses: actions/setup-python@v6
