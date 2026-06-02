@@ -59,7 +59,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     }
 
     const size_t read_bytes = fread(source, sizeof(char), file_size, fp);
-    if (unlikely(!feof(fp))) {
+    if (unlikely(ferror(fp))) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error reading TCL file");
         return NULL;
