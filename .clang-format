@@ -4,11 +4,17 @@ BasedOnStyle: LLVM
 
 ColumnLimit: 100
 IndentWidth: 4
+ContinuationIndentWidth: 4
 TabWidth: 4
 UseTab: Never
 
-PointerAlignment: Right
-DerivePointerAlignment: false
+AlignAfterOpenBracket: Align
+AlignEscapedNewlines: Left
+AlignConsecutiveAssignments: false
+AlignConsecutiveMacros : false
+
+BinPackArguments: false
+BinPackParameters: false
 
 BreakBeforeBraces: Custom
 BraceWrapping:
@@ -16,19 +22,19 @@ BraceWrapping:
   AfterEnum: true
   AfterStruct: true
 BreakAfterOpenBracketBracedList: true
+Cpp11BracedListStyle: true
+InsertBraces: true
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
-InsertBraces: true
+
+IncludeBlocks: Regroup
+SortIncludes: true
+
+PointerAlignment: Right
+DerivePointerAlignment: false
 
 SpaceAfterCStyleCast: false
 SpaceAfterLogicalNot: false
-
-AlignAfterOpenBracket: Align
-BinPackArguments: false
-BinPackParameters: false
-ContinuationIndentWidth: 4
-IncludeBlocks: Regroup
-SortIncludes: true
 ...

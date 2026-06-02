@@ -46,11 +46,11 @@ static inline bool _is_string(char c) {
     return c == '"';
 }
 
-#define _APPEND_RANGE(_s, _e)                                                                      \
-    {                                                                                              \
-        const size_t __token_len = _e - _s;                                                        \
-        strncpy(tcl_minified + index_minified, tcl_source + _s, __token_len);                      \
-        index_minified += __token_len;                                                             \
+#define _APPEND_RANGE(_s, _e)                                                 \
+    {                                                                         \
+        const size_t __token_len = _e - _s;                                   \
+        strncpy(tcl_minified + index_minified, tcl_source + _s, __token_len); \
+        index_minified += __token_len;                                        \
     }
 
 char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
