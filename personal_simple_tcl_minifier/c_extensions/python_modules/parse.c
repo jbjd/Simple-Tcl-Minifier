@@ -69,7 +69,11 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     size_t minified_size;
     char *minified_source = tcl_minify(source, read_bytes, &minified_size);
 
-    ftruncate(fileno(fp), 0);
+    if (ftruncate(fileno(fp), 0) < 0) {
+        fclose(fp);
+        PyErr_SetString(PyExc_OSError, "Error truncating TCL file");
+        return NULL;
+    }
     rewind(fp);
 
     const size_t written_bytes = fwrite(minified_source, sizeof(char), minified_size, fp);
