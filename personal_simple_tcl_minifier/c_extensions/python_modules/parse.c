@@ -1,19 +1,17 @@
 #define Py_LIMITED_API 0x030c0000
 #define PY_SSIZE_T_CLEAN
 
-#include <Python.h>
-
-#include <stdlib.h>
-
-#include "../includes/c_optimizations.h"
 #include "../includes/parse.h"
 
-static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg)
-{
+#include "../includes/c_optimizations.h"
+
+#include <Python.h>
+#include <stdlib.h>
+
+static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
     Py_ssize_t size;
     const char *source = PyUnicode_AsUTF8AndSize(arg, &size);
-    if (unlikely(source == NULL))
-    {
+    if (unlikely(source == NULL)) {
         return NULL;
     }
 
@@ -28,11 +26,9 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg)
 }
 
 static PyMethodDef parse_methods[] = {
-    {"tcl_minify", Py_tcl_minify, METH_O, NULL},
-    {NULL, NULL, 0, NULL}};
+    {"tcl_minify", Py_tcl_minify, METH_O, NULL}, {NULL, NULL, 0, NULL}};
 
-static int parse_exec(PyObject *Py_UNUSED(module))
-{
+static int parse_exec(PyObject *Py_UNUSED(module)) {
     return 0;
 }
 
@@ -51,7 +47,6 @@ static struct PyModuleDef parse_module = {
     .m_methods = parse_methods,
     .m_slots = parse_slots};
 
-PyMODINIT_FUNC PyInit_parse(void)
-{
+PyMODINIT_FUNC PyInit_parse(void) {
     return PyModuleDef_Init(&parse_module);
 }

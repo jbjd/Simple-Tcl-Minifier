@@ -14,6 +14,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check C Formatting
+        run: |
+          sudo apt install clang-format
+          find personal_simple_tcl_minifier/ -iname '*.c' -o -iname '*.h' | xargs clang-format -n -Werror
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
