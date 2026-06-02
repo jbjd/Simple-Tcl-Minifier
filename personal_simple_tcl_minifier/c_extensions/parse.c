@@ -36,7 +36,6 @@ static inline bool _is_delimiter(char c) {
 }
 
 static inline bool _is_comment(char c, const char *tcl_minified, int index_minified) {
-    // TODO: See if this can be more generous then just newline/semicolon
     return c == '#' && (index_minified == 0 || tcl_minified[index_minified - 1] == '\n' ||
                         tcl_minified[index_minified - 1] == ';');
 }
