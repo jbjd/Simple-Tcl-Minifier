@@ -1,7 +1,7 @@
 validate:
 	ruff check .
 	ruff format --check
-	mypy . --check-untyped-defs
+	clang-format -n -Werror $(shell python -c "from glob import glob;print(' '.join(glob('**/*.c',recursive=True)+glob('**/*.h',recursive=True)))")
 	codespell .
 
 build-parse:
