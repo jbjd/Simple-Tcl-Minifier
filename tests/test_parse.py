@@ -1,7 +1,9 @@
+import os
+import tempfile
 import unittest
 from tkinter import TclError, Tk
 
-from personal_simple_tcl_minifier.parse import tcl_minify
+from personal_simple_tcl_minifier.parse import tcl_minify, tcl_minify_file
 
 
 class ParseTests(unittest.TestCase):
@@ -136,6 +138,21 @@ append re \\\\}""".strip()
         source: str = '"asdf'
         expected_output: str = '"asdf'
         self._test_minifier(source, expected_output, False)
+
+    def test_minify_file(self):
+        temp_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115
+        try:
+            try:
+                temp_file.write(b" set   a   1")
+            finally:
+                temp_file.close()
+
+            tcl_minify_file(temp_file.name)
+
+            with open(temp_file.name, encoding="utf-8") as fp:
+                assert fp.read() == "set a 1"
+        finally:
+            os.remove(temp_file.name)
 
     def _test_minifier(
         self, source: str, expected_output: str, validate: bool = True
