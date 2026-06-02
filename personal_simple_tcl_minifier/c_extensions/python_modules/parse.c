@@ -86,7 +86,8 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
 static PyMethodDef parse_methods[] = {
     {"tcl_minify", Py_tcl_minify, METH_O, NULL},
     {"tcl_minify_file", Py_tcl_minify_file, METH_O, NULL},
-    {NULL, NULL, 0, NULL}};
+    {NULL, NULL, 0, NULL},
+};
 
 static int parse_exec(PyObject *Py_UNUSED(module)) {
     return 0;
