@@ -136,8 +136,7 @@ append re \\\\}""".strip()
 
     def test_broken_string(self):
         source: str = '"asdf'
-        expected_output: str = '"asdf'
-        self._test_minifier(source, expected_output, False)
+        self._test_minifier(source, source, False)
 
     def test_minify_file(self):
         temp_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115
