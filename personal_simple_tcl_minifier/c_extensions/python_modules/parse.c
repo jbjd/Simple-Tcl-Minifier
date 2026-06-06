@@ -106,6 +106,9 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     }
 
     const int error = _tcl_minify_file(path);
+#ifdef _WIN32
+    PyMem_Free(path);
+#endif
 
     return error ? NULL : Py_None;
 }
