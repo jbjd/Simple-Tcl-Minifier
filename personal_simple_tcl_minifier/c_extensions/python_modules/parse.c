@@ -112,23 +112,32 @@ static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
     wchar_t search_query[(path_size + 3) * sizeof(wchar_t)];
     wmemcpy(search_query, path, path_size);
 
-    const char path_last_char = path[path_size - 1];
+    const wchar_t path_last_char = path[path_size - 1];
     if (path_last_char != L'/' && path_last_char != L'\\') {
-        wmemcpy(search_query + path_size, L"\\*", wcslen(L"\\*"));
+        wmemcpy(search_query + path_size, L"\\*", wcslen(L"\\*") + 1);
     } else {
-        wmemcpy(search_query + path_size, L"*", wcslen(L"*"));
+        wmemcpy(search_query + path_size, L"*", wcslen(L"*") + 1);
     }
 
     struct _WIN32_FIND_DATAW file_data;
     HANDLE file_handle = FindFirstFileExW(search_query, FindExInfoBasic, &file_data, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
 
     if (file_handle == INVALID_HANDLE_VALUE) {
+        PyErr_SetString(PyExc_OSError, "Error accessing directory");
         return NULL;
     }
 
+    const size_t search_query_size = wcslen(search_query);
+
     do {
         if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-            printf("%ls\n", file_data.cFileName);
+            const size_t file_name_size = wcslen(file_data.cFileName);
+            wchar_t file_path[search_query_size + file_name_size + 1];
+
+            wmemcpy(file_path, search_query, search_query_size);
+            wmemcpy(file_path + search_query_size - 1, file_data.cFileName, file_name_size);
+
+            printf("%ls\n", file_path);
             // _w_tcl_minify_file(fp);
         }
     } while (FindNextFileW(file_handle, &file_data));
