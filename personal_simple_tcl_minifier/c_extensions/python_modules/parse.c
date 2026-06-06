@@ -12,6 +12,8 @@
 #ifdef _WIN32
 #define ftruncate _chsize
 #define fileno _fileno
+#else
+#undef PTCL_ALLOW_UTF8_WINDOWS
 #endif
 
 static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
