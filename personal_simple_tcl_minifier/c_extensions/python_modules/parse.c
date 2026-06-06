@@ -97,7 +97,7 @@ static inline int _tcl_minify_file(const char *path) {
 
 static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
 #ifdef _WIN32
-    const wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
+    wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
 #else
     const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
 #endif
