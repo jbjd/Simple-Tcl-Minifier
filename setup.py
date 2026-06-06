@@ -1,4 +1,5 @@
 import os
+import sys
 
 from setuptools import Extension, setup
 
@@ -12,6 +13,20 @@ if os.name == "nt" and not os.path.exists("setup.cfg"):
         fp.write("""[build]
 compiler=mingw32""")
 
+
+args: list[str] = ["-O3", "-march=native", "-mtune=native", "-Wall"]
+
+if sys.platform == "win32" and not os.environ.get("PTCL_DISALLOW_UTF8_CHECK"):
+    import ctypes
+
+    if ctypes.windll.kernel32.GetConsoleOutputCP() == 65001:  # Experiment UTF-8 on
+        print(
+            "Will compile using UTF-8 file paths since it seems UTF-8 support is "
+            "enabled in windows settings. If you have issues, "
+            "compile with env PTCL_DISALLOW_UTF8_CHECK set to 1"
+        )
+        args.append("-DPTCL_ALLOW_UTF8_WINDOWS")
+
 # Define the extension module
 parse_extension = Extension(
     name=f"{PACKAGE}.parse",
@@ -19,7 +34,7 @@ parse_extension = Extension(
         f"{C_FOLDER}/python_modules/parse.c",
         f"{C_FOLDER}/parse.c",
     ],
-    extra_compile_args=["-O3", "-march=native", "-mtune=native", "-Wall"],
+    extra_compile_args=args,
 )
 
 setup(

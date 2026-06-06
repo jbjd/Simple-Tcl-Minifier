@@ -96,7 +96,7 @@ static inline int _tcl_minify_file(const char *path) {
 #endif
 
 static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
-#ifdef _WIN32
+#ifndef PTCL_ALLOW_UTF8_WINDOWS
     wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
 #else
     const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
@@ -106,7 +106,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     }
 
     const int error = _tcl_minify_file(path);
-#ifdef _WIN32
+#ifndef PTCL_ALLOW_UTF8_WINDOWS
     PyMem_Free(path);
 #endif
 
