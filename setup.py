@@ -19,7 +19,9 @@ args: list[str] = ["-O3", "-march=native", "-mtune=native", "-Wall"]
 if sys.platform == "win32" and not os.environ.get("PTCL_DISALLOW_UTF8_CHECK"):
     import ctypes
 
-    if ctypes.windll.kernel32.GetConsoleOutputCP() == 65001:  # Experiment UTF-8 on
+    # Check if this console output in UTF-8
+    # Only occurs if windows setting on or console was explicitly set to it
+    if ctypes.windll.kernel32.GetConsoleOutputCP() == 65001:
         print(
             "\n-----\n"
             "WARNING: Will compile using UTF-8 file paths since it seems UTF-8 support "
