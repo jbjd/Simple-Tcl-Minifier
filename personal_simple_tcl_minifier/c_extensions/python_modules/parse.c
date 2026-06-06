@@ -102,21 +102,15 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     return _tcl_minify_file(path) ? NULL : Py_None;
 }
 
-static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
-    Py_ssize_t path_size;
-    const wchar_t *path = PyUnicode_AsWideCharString(arg, &path_size);
-    if (unlikely(path == NULL)) {
-        return NULL;
-    }
+static inline int _tcl_minify_folder(const wchar_t *search_path, size_t search_path_size) {
+    wchar_t search_query[(search_path_size + 3) * sizeof(wchar_t)];
+    wmemcpy(search_query, search_path, search_path_size);
 
-    wchar_t search_query[(path_size + 3) * sizeof(wchar_t)];
-    wmemcpy(search_query, path, path_size);
-
-    const wchar_t path_last_char = path[path_size - 1];
+    const wchar_t path_last_char = search_path[search_path_size - 1];
     if (path_last_char != L'/' && path_last_char != L'\\') {
-        wmemcpy(search_query + path_size, L"\\*", wcslen(L"\\*") + 1);
+        wmemcpy(search_query + search_path_size, L"\\*", wcslen(L"\\*") + 1);
     } else {
-        wmemcpy(search_query + path_size, L"*", wcslen(L"*") + 1);
+        wmemcpy(search_query + search_path_size, L"*", wcslen(L"*") + 1);
     }
 
     struct _WIN32_FIND_DATAW file_data;
@@ -124,27 +118,48 @@ static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
 
     if (file_handle == INVALID_HANDLE_VALUE) {
         PyErr_SetString(PyExc_OSError, "Error accessing directory");
-        return NULL;
+        return 1;
     }
 
     const size_t search_query_size = wcslen(search_query);
 
     do {
-        if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-            const size_t file_name_size = wcslen(file_data.cFileName);
-            wchar_t file_path[search_query_size + file_name_size + 1];
-
-            wmemcpy(file_path, search_query, search_query_size);
-            wmemcpy(file_path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
-
-            printf("%ls\n", file_path);
-            // _w_tcl_minify_file(fp);
+        if (wcscmp(file_data.cFileName, L".") == 0 || wcscmp(file_data.cFileName, L"..") == 0) {
+            continue;
         }
+
+        const size_t file_name_size = wcslen(file_data.cFileName);
+        const size_t path_size = search_query_size + file_name_size;
+        wchar_t *path = malloc((path_size + 1) * sizeof(wchar_t));
+
+        wmemcpy(path, search_query, search_query_size);
+        wmemcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
+
+        if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+            printf("file: %ls\n", path);
+            // _w_tcl_minify_file(fp);
+        } else {
+            _tcl_minify_folder(path, path_size - 1);
+        }
+        free(path);
     } while (FindNextFileW(file_handle, &file_data));
 
     FindClose(file_handle);
 
-    return Py_None;
+    return 0;
+}
+
+static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
+    Py_ssize_t path_size;
+    wchar_t *path = PyUnicode_AsWideCharString(arg, &path_size);
+    if (unlikely(path == NULL)) {
+        return NULL;
+    }
+
+    PyObject *result = _tcl_minify_folder(path, path_size) ? NULL : Py_None;
+
+    PyMem_Free(path);
+    return result;
 }
 
 static PyMethodDef parse_methods[] = {
