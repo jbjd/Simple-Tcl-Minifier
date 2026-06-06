@@ -16,19 +16,19 @@ compiler=mingw32""")
 
 args: list[str] = ["-O3", "-march=native", "-mtune=native", "-Wall"]
 
-if (
-    sys.platform == "win32"
-    and not os.environ.get("PTCL_DISALLOW_UTF8_CHECK")
-    and sys.getfilesystemencoding().lower() == "utf-8"
-):
-    print(
-        "\n-----\n"
-        "WARNING: Will compile using UTF-8 file paths since it seems UTF-8 support "
-        "is enabled in windows settings. If you have issues, "
-        "compile with env PTCL_DISALLOW_UTF8_CHECK set to 1"
-        "\n-----\n",
-    )
-    args.append("-DPTCL_UTF8")
+if sys.platform == "win32" and not os.environ.get("PTCL_DISALLOW_UTF8_CHECK"):
+    import ctypes
+
+    # Check if code page in UTF-8
+    if ctypes.windll.kernel32.GetACP() == 65001:
+        print(
+            "\n-----\n"
+            "WARNING: Will compile using UTF-8 file paths since it seems UTF-8 support "
+            "is enabled in windows settings. If you have issues, "
+            "compile with env PTCL_DISALLOW_UTF8_CHECK set to 1"
+            "\n-----\n",
+        )
+        args.append("-DPTCL_UTF8")
 
 # Define the extension module
 parse_extension = Extension(
