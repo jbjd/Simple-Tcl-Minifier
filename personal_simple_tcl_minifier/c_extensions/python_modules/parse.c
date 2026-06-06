@@ -135,7 +135,7 @@ static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
             wchar_t file_path[search_query_size + file_name_size + 1];
 
             wmemcpy(file_path, search_query, search_query_size);
-            wmemcpy(file_path + search_query_size - 1, file_data.cFileName, file_name_size);
+            wmemcpy(file_path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
 
             printf("%ls\n", file_path);
             // _w_tcl_minify_file(fp);
