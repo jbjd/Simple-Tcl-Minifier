@@ -5,6 +5,13 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      runs-on:
+        type: choice
+        options:
+          - ubuntu-latest
+          - windows-latest
+
 
 jobs:
   validate:
