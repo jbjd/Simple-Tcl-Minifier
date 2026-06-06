@@ -99,7 +99,9 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
         return NULL;
     }
 
-    return _tcl_minify_file(path) ? NULL : Py_None;
+    const int error = _tcl_minify_file(path);
+
+    return error ? NULL : Py_None;
 }
 
 static inline int _tcl_minify_folder(const wchar_t *search_path, size_t search_path_size) {
@@ -117,7 +119,6 @@ static inline int _tcl_minify_folder(const wchar_t *search_path, size_t search_p
     HANDLE file_handle = FindFirstFileExW(search_query, FindExInfoBasic, &file_data, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
 
     if (file_handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetString(PyExc_OSError, "Error accessing directory");
         return 1;
     }
 
@@ -136,8 +137,12 @@ static inline int _tcl_minify_folder(const wchar_t *search_path, size_t search_p
         wmemcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
 
         if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-            printf("file: %ls\n", path);
-            // _w_tcl_minify_file(fp);
+            if ((file_name_size > 2 && wmemcmp(file_data.cFileName + file_name_size - 3, L".tm", 3) == 0) ||
+                (file_name_size > 3 && wmemcmp(file_data.cFileName + file_name_size - 4, L".tcl", 4) == 0)) {
+                if (_w_tcl_minify_file(path)) {
+                    return 2;
+                }
+            }
         } else {
             _tcl_minify_folder(path, path_size - 1);
         }
@@ -156,10 +161,14 @@ static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
         return NULL;
     }
 
-    PyObject *result = _tcl_minify_folder(path, path_size) ? NULL : Py_None;
-
+    const int error = _tcl_minify_folder(path, path_size);
     PyMem_Free(path);
-    return result;
+
+    if (error) {
+        PyErr_SetString(PyExc_OSError, "Error accessing folder");
+    }
+
+    return error ? NULL : Py_None;
 }
 
 static PyMethodDef parse_methods[] = {
