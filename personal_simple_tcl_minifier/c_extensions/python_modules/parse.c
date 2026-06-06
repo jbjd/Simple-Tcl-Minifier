@@ -10,7 +10,6 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
-#include <windows.h>
 #define ftruncate _chsize
 #define fileno _fileno
 #endif
