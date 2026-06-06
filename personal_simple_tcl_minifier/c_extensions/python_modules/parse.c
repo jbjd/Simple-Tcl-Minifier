@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
+#include <windows.h>
 #define ftruncate _chsize
 #define fileno _fileno
 #endif
@@ -31,16 +32,10 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
     return out;
 }
 
-static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
-    const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
-    if (unlikely(path == NULL)) {
-        return NULL;
-    }
-
-    FILE *fp = fopen(path, "r+");
+static int __tcl_minify_file(FILE *fp) {
     if (fp == NULL) {
         PyErr_SetString(PyExc_OSError, "Error opening TCL file to read");
-        return NULL;
+        return 1;
     }
 
     fseek(fp, 0, SEEK_END);
@@ -50,20 +45,20 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     if (unlikely(file_size < 0)) {
         PyErr_SetString(PyExc_OSError, "Error telling TCL file");
         fclose(fp);
-        return NULL;
+        return 1;
     }
 
     char *source = (char *)malloc(file_size * sizeof(char));
     if (unlikely(source == NULL)) {
         fclose(fp);
-        return NULL;
+        return 1;
     }
 
     const size_t read_bytes = fread(source, sizeof(char), file_size, fp);
     if (unlikely(ferror(fp))) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error reading TCL file");
-        return NULL;
+        return 1;
     }
 
     size_t minified_size;
@@ -72,7 +67,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     if (ftruncate(fileno(fp), 0) < 0) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error truncating TCL file");
-        return NULL;
+        return 1;
     }
     rewind(fp);
 
@@ -82,8 +77,63 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
 
     if (written_bytes != minified_size) {
         PyErr_SetString(PyExc_OSError, "Error writing TCL file");
+        return 1;
+    }
+
+    return 0;
+}
+
+static inline int _tcl_minify_file(const char *path) {
+    FILE *fp = fopen(path, "r+");
+    return __tcl_minify_file(fp);
+}
+
+static inline int _w_tcl_minify_file(const wchar_t *path) {
+    FILE *fp = _wfopen(path, L"r+");
+    return __tcl_minify_file(fp);
+}
+
+static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
+    const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
+    if (unlikely(path == NULL)) {
         return NULL;
     }
+
+    return _tcl_minify_file(path) ? NULL : Py_None;
+}
+
+static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
+    Py_ssize_t path_size;
+    const wchar_t *path = PyUnicode_AsWideCharString(arg, &path_size);
+    if (unlikely(path == NULL)) {
+        return NULL;
+    }
+
+    wchar_t search_query[(path_size + 3) * sizeof(wchar_t)];
+    wmemcpy(search_query, path, path_size);
+
+    const char path_last_char = path[path_size - 1];
+    if (path_last_char != L'/' && path_last_char != L'\\') {
+        wmemcpy(search_query + path_size, L"\\*", wcslen(L"\\*"));
+    } else {
+        wmemcpy(search_query + path_size, L"*", wcslen(L"*"));
+    }
+
+    struct _WIN32_FIND_DATAW file_data;
+    HANDLE file_handle = FindFirstFileExW(search_query, FindExInfoBasic, &file_data, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
+
+    if (file_handle == INVALID_HANDLE_VALUE) {
+        return NULL;
+    }
+
+    do {
+        if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+            printf("%ls\n", file_data.cFileName);
+            // _w_tcl_minify_file(fp);
+        }
+    } while (FindNextFileW(file_handle, &file_data));
+
+    FindClose(file_handle);
 
     return Py_None;
 }
@@ -91,6 +141,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
 static PyMethodDef parse_methods[] = {
     {"tcl_minify", Py_tcl_minify, METH_O, NULL},
     {"tcl_minify_file", Py_tcl_minify_file, METH_O, NULL},
+    {"tcl_minify_folder", Py_tcl_minify_folder, METH_O, NULL},
     {NULL, NULL, 0, NULL},
 };
 
