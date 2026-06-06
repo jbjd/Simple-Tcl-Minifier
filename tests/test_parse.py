@@ -139,7 +139,8 @@ append re \\\\}""".strip()
         self._test_minifier(source, source, False)
 
     def test_minify_file(self):
-        temp_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115
+        # Ensure non-ascii handled
+        temp_file = tempfile.NamedTemporaryFile(prefix="三島", delete=False)  # noqa: SIM115
         try:
             try:
                 temp_file.write(b" set   a   1")
