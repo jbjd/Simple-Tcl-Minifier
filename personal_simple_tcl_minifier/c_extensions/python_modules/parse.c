@@ -13,7 +13,7 @@
 #define ftruncate _chsize
 #define fileno _fileno
 #else
-#undef PTCL_ALLOW_UTF8_WINDOWS
+#define PTCL_UTF8
 #endif
 
 static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
@@ -84,7 +84,7 @@ static int __tcl_minify_file(FILE *fp) {
     return 0;
 }
 
-#ifndef PTCL_ALLOW_UTF8_WINDOWS
+#ifndef PTCL_UTF8
 static inline int _tcl_minify_file(const wchar_t *path) {
     FILE *fp = _wfopen(path, L"r+");
     return __tcl_minify_file(fp);
@@ -97,7 +97,7 @@ static inline int _tcl_minify_file(const char *path) {
 #endif
 
 static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
-#ifndef PTCL_ALLOW_UTF8_WINDOWS
+#ifndef PTCL_UTF8
     wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
 #else
     const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
@@ -107,7 +107,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     }
 
     const int error = _tcl_minify_file(path);
-#ifndef PTCL_ALLOW_UTF8_WINDOWS
+#ifndef PTCL_UTF8
     PyMem_Free(path);
 #endif
 

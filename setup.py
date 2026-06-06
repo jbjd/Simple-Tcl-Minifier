@@ -21,11 +21,13 @@ if sys.platform == "win32" and not os.environ.get("PTCL_DISALLOW_UTF8_CHECK"):
 
     if ctypes.windll.kernel32.GetConsoleOutputCP() == 65001:  # Experiment UTF-8 on
         print(
-            "Will compile using UTF-8 file paths since it seems UTF-8 support is "
-            "enabled in windows settings. If you have issues, "
+            "\n-----\n"
+            "WARNING: Will compile using UTF-8 file paths since it seems UTF-8 support "
+            "is enabled in windows settings. If you have issues, "
             "compile with env PTCL_DISALLOW_UTF8_CHECK set to 1"
+            "\n-----\n",
         )
-        args.append("-DPTCL_ALLOW_UTF8_WINDOWS")
+        args.append("-DPTCL_UTF8")
 
 # Define the extension module
 parse_extension = Extension(
