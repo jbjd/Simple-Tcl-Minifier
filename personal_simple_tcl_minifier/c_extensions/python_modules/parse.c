@@ -31,16 +31,10 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
     return out;
 }
 
-static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
-    const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
-    if (unlikely(path == NULL)) {
-        return NULL;
-    }
-
-    FILE *fp = fopen(path, "r+");
+static int __tcl_minify_file(FILE *fp) {
     if (fp == NULL) {
         PyErr_SetString(PyExc_OSError, "Error opening TCL file to read");
-        return NULL;
+        return 1;
     }
 
     fseek(fp, 0, SEEK_END);
@@ -50,20 +44,20 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     if (unlikely(file_size < 0)) {
         PyErr_SetString(PyExc_OSError, "Error telling TCL file");
         fclose(fp);
-        return NULL;
+        return 1;
     }
 
     char *source = (char *)malloc(file_size * sizeof(char));
     if (unlikely(source == NULL)) {
         fclose(fp);
-        return NULL;
+        return 1;
     }
 
     const size_t read_bytes = fread(source, sizeof(char), file_size, fp);
     if (unlikely(ferror(fp))) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error reading TCL file");
-        return NULL;
+        return 1;
     }
 
     size_t minified_size;
@@ -72,7 +66,7 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     if (ftruncate(fileno(fp), 0) < 0) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error truncating TCL file");
-        return NULL;
+        return 1;
     }
     rewind(fp);
 
@@ -82,10 +76,40 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
 
     if (written_bytes != minified_size) {
         PyErr_SetString(PyExc_OSError, "Error writing TCL file");
+        return 1;
+    }
+
+    return 0;
+}
+
+#ifdef _WIN32
+static inline int _tcl_minify_file(const wchar_t *path) {
+    FILE *fp = _wfopen(path, L"r+");
+    return __tcl_minify_file(fp);
+}
+#else
+static inline int _tcl_minify_file(const char *path) {
+    FILE *fp = fopen(path, "r+");
+    return __tcl_minify_file(fp);
+}
+#endif
+
+static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
+#ifdef _WIN32
+    wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
+#else
+    const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
+#endif
+    if (unlikely(path == NULL)) {
         return NULL;
     }
 
-    return Py_None;
+    const int error = _tcl_minify_file(path);
+#ifdef _WIN32
+    PyMem_Free(path);
+#endif
+
+    return error ? NULL : Py_None;
 }
 
 static PyMethodDef parse_methods[] = {
