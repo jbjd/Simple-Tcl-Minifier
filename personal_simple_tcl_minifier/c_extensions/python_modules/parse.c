@@ -83,18 +83,24 @@ static int __tcl_minify_file(FILE *fp) {
     return 0;
 }
 
+#ifdef _WIN32
+static inline int _tcl_minify_file(const wchar_t *path) {
+    FILE *fp = _wfopen(path, L"r+");
+    return __tcl_minify_file(fp);
+}
+#else
 static inline int _tcl_minify_file(const char *path) {
     FILE *fp = fopen(path, "r+");
     return __tcl_minify_file(fp);
 }
-
-static inline int _w_tcl_minify_file(const wchar_t *path) {
-    FILE *fp = _wfopen(path, L"r+");
-    return __tcl_minify_file(fp);
-}
+#endif
 
 static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
+#ifdef _WIN32
+    wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
+#else
     const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
+#endif
     if (unlikely(path == NULL)) {
         return NULL;
     }
