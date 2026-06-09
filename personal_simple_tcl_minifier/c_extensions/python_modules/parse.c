@@ -146,8 +146,8 @@ static inline int _tcl_minify_folder(const wchar_t *search_path, size_t search_p
         wmemcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
 
         if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-            if ((file_name_size > 2 && wmemcmp(file_data.cFileName + file_name_size - 3, L".tm", 3) == 0) ||
-                (file_name_size > 3 && wmemcmp(file_data.cFileName + file_name_size - 4, L".tcl", 4) == 0)) {
+            if ((wcscmp(file_data.cFileName + file_name_size - 3, L".tm") == 0) ||
+                (wcscmp(file_data.cFileName + file_name_size - 4, L".tcl") == 0)) {
                 if (_w_tcl_minify_file(path)) {
                     return 2;
                 }
