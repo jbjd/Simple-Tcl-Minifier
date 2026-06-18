@@ -93,6 +93,7 @@ static int _tcl_minify_file(const ptcl_char *path) {
 
     size_t minified_size;
     char *minified_source = tcl_minify(source, read_bytes, &minified_size);
+    free(source);
 
     if (ftruncate(fileno(fp), 0) < 0) {
         fclose(fp);
@@ -132,67 +133,94 @@ static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
     return error ? NULL : Py_None;
 }
 
-// TODO: NO RECURSION, use reverse linked list as stack
-// struct ReverseLinkedList
-// {
-//     struct ReverseLinkedList *previous;
-//     ptcl_char *path;
-// };
+struct ReverseLinkedList
+{
+    struct ReverseLinkedList *previous;
+    ptcl_char *search_query;
+};
+
+static struct ReverseLinkedList *ReverseLinkedList_append(
+    struct ReverseLinkedList *previous,
+    const ptcl_char *path,
+    size_t path_size) {
+    struct ReverseLinkedList *appended = malloc(sizeof(struct ReverseLinkedList));
+    appended->previous = NULL;
+    appended->search_query = malloc((path_size + 3) * sizeof(ptcl_char));
+
+    ptcl_memcpy(appended->search_query, path, path_size);
+
+    const ptcl_char path_last_char = path[path_size - 1];
+    if (path_last_char != CHAR_LITERAL('/') && path_last_char != CHAR_LITERAL('\\')) {
+        ptcl_memcpy(appended->search_query + path_size, CHAR_LITERAL("\\*"), ptcl_strlen(CHAR_LITERAL("\\*")) + 1);
+    } else {
+        ptcl_memcpy(appended->search_query + path_size, CHAR_LITERAL("*"), ptcl_strlen(CHAR_LITERAL("*")) + 1);
+    }
+
+    printf("appended: %s\n", appended->search_query);
+
+    return appended;
+}
+
+static inline struct ReverseLinkedList *ReverseLinkedList_pop(struct ReverseLinkedList *list) {
+    struct ReverseLinkedList *previous = list->previous;
+
+    free(list);
+
+    return previous;
+}
 
 static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search_path_size) {
-    ptcl_char search_query[(search_path_size + 3) * sizeof(ptcl_char)];
-    ptcl_memcpy(search_query, search_path, search_path_size);
 
-    const ptcl_char path_last_char = search_path[search_path_size - 1];
-    if (path_last_char != CHAR_LITERAL('/') && path_last_char != CHAR_LITERAL('\\')) {
-        ptcl_memcpy(search_query + search_path_size, CHAR_LITERAL("\\*"), ptcl_strlen(CHAR_LITERAL("\\*")) + 1);
-    } else {
-        ptcl_memcpy(search_query + search_path_size, CHAR_LITERAL("*"), ptcl_strlen(CHAR_LITERAL("*")) + 1);
-    }
+    struct ReverseLinkedList *folders_to_visit_stack = ReverseLinkedList_append(NULL, search_path, search_path_size);
 
-    struct ptcl_FIND_DATA file_data;
-    HANDLE file_handle = ptcl_FindFirstFileEx(
-        search_query,
-        FindExInfoBasic,
-        &file_data,
-        FindExSearchNameMatch,
-        NULL,
-        FIND_FIRST_EX_LARGE_FETCH);
+    while (folders_to_visit_stack != NULL) {
+        ptcl_char *search_query = folders_to_visit_stack->search_query;
+        folders_to_visit_stack = ReverseLinkedList_pop(folders_to_visit_stack);
 
-    if (file_handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetString(PyExc_OSError, "Can't find or access folder");
-        return 1;
-    }
+        struct ptcl_FIND_DATA file_data;
+        HANDLE file_handle = ptcl_FindFirstFileEx(
+            search_query,
+            FindExInfoBasic,
+            &file_data,
+            FindExSearchNameMatch,
+            NULL,
+            FIND_FIRST_EX_LARGE_FETCH);
 
-    const size_t search_query_size = ptcl_strlen(search_query);
-
-    do {
-        if (ptcl_strcmp(file_data.cFileName, CHAR_LITERAL(".")) == 0 ||
-            ptcl_strcmp(file_data.cFileName, CHAR_LITERAL("..")) == 0) {
-            continue;
+        if (file_handle == INVALID_HANDLE_VALUE) {
+            PyErr_SetString(PyExc_OSError, "Can't find or access folder");
+            return 1;
         }
 
-        const size_t file_name_size = ptcl_strlen(file_data.cFileName);
-        const size_t path_size = search_query_size + file_name_size;
-        ptcl_char path[path_size + 1];
+        const size_t search_query_size = ptcl_strlen(search_query);
 
-        ptcl_memcpy(path, search_query, search_query_size);
-        ptcl_memcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
-
-        if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-            if ((ptcl_strcmp(file_data.cFileName + file_name_size - 3, CHAR_LITERAL(".tm")) == 0) ||
-                (ptcl_strcmp(file_data.cFileName + file_name_size - 4, CHAR_LITERAL(".tcl")) == 0)) {
-                printf("%s\n", file_data.cFileName);
-                // if (_tcl_minify_file(path)) {
-                //     return 2;
-                // }
+        do {
+            if (ptcl_strcmp(file_data.cFileName, CHAR_LITERAL(".")) == 0 ||
+                ptcl_strcmp(file_data.cFileName, CHAR_LITERAL("..")) == 0) {
+                continue;
             }
-        } else {
-            _tcl_minify_folder(path, path_size - 1);
-        }
-    } while (ptcl_FindNextFile(file_handle, &file_data));
 
-    FindClose(file_handle);
+            const size_t file_name_size = ptcl_strlen(file_data.cFileName);
+            const size_t path_size = search_query_size + file_name_size - 1;
+            ptcl_char path[path_size + 1];
+
+            ptcl_memcpy(path, search_query, search_query_size);
+            ptcl_memcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
+
+            if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+                if (ptcl_strcmp(file_data.cFileName + file_name_size - 3, CHAR_LITERAL(".tm")) == 0 ||
+                    ptcl_strcmp(file_data.cFileName + file_name_size - 4, CHAR_LITERAL(".tcl")) == 0) {
+                    // if (_tcl_minify_file(path)) {
+                    //     return 2;
+                    // }
+                }
+            } else {
+                folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
+            }
+        } while (ptcl_FindNextFile(file_handle, &file_data));
+
+        free(search_query);
+        FindClose(file_handle);
+    }
 
     return 0;
 }
