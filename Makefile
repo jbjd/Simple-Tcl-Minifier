@@ -14,4 +14,10 @@ build-parse:
 	python setup.py build_ext --inplace
 
 test:
-	python -m unittest discover tests
+	python -m unittest tests/test_parse.py
+
+override PYTHONUNBUFFERED=1
+export PYTHONUNBUFFERED
+
+test-memory-leak:
+	python -m unittest tests/test_memory_leak.py

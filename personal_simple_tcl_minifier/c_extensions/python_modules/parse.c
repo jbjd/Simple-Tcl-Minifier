@@ -10,10 +10,23 @@
 #include <stdlib.h>
 
 #ifdef _WIN32
+#include <windows.h>
 #define ftruncate _chsize
 #define fileno _fileno
 #else
 #define PTCL_UTF8
+#endif
+
+#ifdef PTCL_UTF8
+#define ptcl_char char
+#define ptcl_open_r_plus(path) fopen(path, "r+")
+#define PyUnicode_AsPtclChar PyUnicode_AsUTF8AndSize
+#define PyUnicode_PtclChar const char *
+#else
+#define ptcl_char wchar_t
+#define ptcl_open_r_plus(path) _wfopen(path, L"r+")
+#define PyUnicode_AsPtclChar PyUnicode_AsWideCharString
+#define PyUnicode_PtclChar wchar_t *
 #endif
 
 static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
@@ -33,7 +46,9 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
     return out;
 }
 
-static int __tcl_minify_file(FILE *fp) {
+static int _tcl_minify_file(const ptcl_char *path) {
+    FILE *fp = ptcl_open_r_plus(path);
+
     if (fp == NULL) {
         PyErr_SetString(PyExc_OSError, "Error opening TCL file to read");
         return 1;
@@ -64,6 +79,7 @@ static int __tcl_minify_file(FILE *fp) {
 
     size_t minified_size;
     char *minified_source = tcl_minify(source, read_bytes, &minified_size);
+    free(source);
 
     if (ftruncate(fileno(fp), 0) < 0) {
         fclose(fp);
@@ -84,32 +100,20 @@ static int __tcl_minify_file(FILE *fp) {
     return 0;
 }
 
+static inline void _PyMem_Free_IfNeeded(PyUnicode_PtclChar path) {
 #ifndef PTCL_UTF8
-static inline int _tcl_minify_file(const wchar_t *path) {
-    FILE *fp = _wfopen(path, L"r+");
-    return __tcl_minify_file(fp);
-}
-#else
-static inline int _tcl_minify_file(const char *path) {
-    FILE *fp = fopen(path, "r+");
-    return __tcl_minify_file(fp);
-}
+    PyMem_Free(path);
 #endif
+}
 
 static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
-#ifndef PTCL_UTF8
-    wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
-#else
-    const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
-#endif
+    PyUnicode_PtclChar path = PyUnicode_AsPtclChar(arg, NULL);
     if (unlikely(path == NULL)) {
         return NULL;
     }
 
     const int error = _tcl_minify_file(path);
-#ifndef PTCL_UTF8
-    PyMem_Free(path);
-#endif
+    _PyMem_Free_IfNeeded(path);
 
     return error ? NULL : Py_None;
 }
