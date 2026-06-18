@@ -17,6 +17,32 @@
 #define PTCL_UTF8
 #endif
 
+#ifdef PTCL_UTF8
+#define CHAR_LITERAL(x) x
+#define ptcl_char char
+#define ptcl_memcpy memcpy
+#define ptcl_strcmp strcmp
+#define ptcl_strlen strlen
+#define ptcl_open_r_plus(path) fopen(path, "r+")
+#define ptcl_FIND_DATA _WIN32_FIND_DATAA
+#define ptcl_FindFirstFileEx FindFirstFileExA
+#define ptcl_FindNextFile FindNextFileA
+#define PyUnicode_AsPtclChar PyUnicode_AsUTF8AndSize
+#define PyUnicode_PtclChar const char *
+#else
+#define CHAR_LITERAL(x) L##x
+#define ptcl_char wchar_t
+#define ptcl_memcpy wmemcpy
+#define ptcl_strcmp wcscmp
+#define ptcl_strlen wcslen
+#define ptcl_open_r_plus(path) _wfopen(path, L"r+")
+#define ptcl_FIND_DATA _WIN32_FIND_DATAW
+#define ptcl_FindFirstFileEx FindFirstFileExW
+#define ptcl_FindNextFile FindNextFileW
+#define PyUnicode_AsPtclChar PyUnicode_AsWideCharString
+#define PyUnicode_PtclChar wchar_t *
+#endif
+
 static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
     Py_ssize_t size;
     const char *source = PyUnicode_AsUTF8AndSize(arg, &size);
@@ -34,7 +60,9 @@ static PyObject *Py_tcl_minify(PyObject *self, PyObject *arg) {
     return out;
 }
 
-static int __tcl_minify_file(FILE *fp) {
+static int _tcl_minify_file(const ptcl_char *path) {
+    FILE *fp = ptcl_open_r_plus(path);
+
     if (fp == NULL) {
         PyErr_SetString(PyExc_OSError, "Error opening TCL file to read");
         return 1;
@@ -85,80 +113,84 @@ static int __tcl_minify_file(FILE *fp) {
     return 0;
 }
 
+static inline void _PyMem_Free_IfNeeded(PyUnicode_PtclChar path) {
 #ifndef PTCL_UTF8
-static inline int _tcl_minify_file(const wchar_t *path) {
-    FILE *fp = _wfopen(path, L"r+");
-    return __tcl_minify_file(fp);
-}
-#else
-static inline int _tcl_minify_file(const char *path) {
-    FILE *fp = fopen(path, "r+");
-    return __tcl_minify_file(fp);
-}
+    PyMem_Free(path);
 #endif
+}
 
 static PyObject *Py_tcl_minify_file(PyObject *self, PyObject *arg) {
-#ifndef PTCL_UTF8
-    wchar_t *path = PyUnicode_AsWideCharString(arg, NULL);
-#else
-    const char *path = PyUnicode_AsUTF8AndSize(arg, NULL);
-#endif
+    PyUnicode_PtclChar path = PyUnicode_AsPtclChar(arg, NULL);
     if (unlikely(path == NULL)) {
         return NULL;
     }
 
     const int error = _tcl_minify_file(path);
-#ifndef PTCL_UTF8
-    PyMem_Free(path);
-#endif
+
+    _PyMem_Free_IfNeeded(path);
 
     return error ? NULL : Py_None;
 }
 
-static inline int _tcl_minify_folder(const wchar_t *search_path, size_t search_path_size) {
-    wchar_t search_query[(search_path_size + 3) * sizeof(wchar_t)];
-    wmemcpy(search_query, search_path, search_path_size);
+// TODO: NO RECURSION, use reverse linked list as stack
+// struct ReverseLinkedList
+// {
+//     struct ReverseLinkedList *previous;
+//     ptcl_char *path;
+// };
 
-    const wchar_t path_last_char = search_path[search_path_size - 1];
-    if (path_last_char != L'/' && path_last_char != L'\\') {
-        wmemcpy(search_query + search_path_size, L"\\*", wcslen(L"\\*") + 1);
+static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search_path_size) {
+    ptcl_char search_query[(search_path_size + 3) * sizeof(ptcl_char)];
+    ptcl_memcpy(search_query, search_path, search_path_size);
+
+    const ptcl_char path_last_char = search_path[search_path_size - 1];
+    if (path_last_char != CHAR_LITERAL('/') && path_last_char != CHAR_LITERAL('\\')) {
+        ptcl_memcpy(search_query + search_path_size, CHAR_LITERAL("\\*"), ptcl_strlen(CHAR_LITERAL("\\*")) + 1);
     } else {
-        wmemcpy(search_query + search_path_size, L"*", wcslen(L"*") + 1);
+        ptcl_memcpy(search_query + search_path_size, CHAR_LITERAL("*"), ptcl_strlen(CHAR_LITERAL("*")) + 1);
     }
 
-    struct _WIN32_FIND_DATAW file_data;
-    HANDLE file_handle = FindFirstFileExW(search_query, FindExInfoBasic, &file_data, FindExSearchNameMatch, NULL, FIND_FIRST_EX_LARGE_FETCH);
+    struct ptcl_FIND_DATA file_data;
+    HANDLE file_handle = ptcl_FindFirstFileEx(
+        search_query,
+        FindExInfoBasic,
+        &file_data,
+        FindExSearchNameMatch,
+        NULL,
+        FIND_FIRST_EX_LARGE_FETCH);
 
     if (file_handle == INVALID_HANDLE_VALUE) {
+        PyErr_SetString(PyExc_OSError, "Can't find or access folder");
         return 1;
     }
 
-    const size_t search_query_size = wcslen(search_query);
+    const size_t search_query_size = ptcl_strlen(search_query);
 
     do {
-        if (wcscmp(file_data.cFileName, L".") == 0 || wcscmp(file_data.cFileName, L"..") == 0) {
+        if (ptcl_strcmp(file_data.cFileName, CHAR_LITERAL(".")) == 0 ||
+            ptcl_strcmp(file_data.cFileName, CHAR_LITERAL("..")) == 0) {
             continue;
         }
 
-        const size_t file_name_size = wcslen(file_data.cFileName);
+        const size_t file_name_size = ptcl_strlen(file_data.cFileName);
         const size_t path_size = search_query_size + file_name_size;
-        wchar_t *path = malloc((path_size + 1) * sizeof(wchar_t));
+        ptcl_char path[path_size + 1];
 
-        wmemcpy(path, search_query, search_query_size);
-        wmemcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
+        ptcl_memcpy(path, search_query, search_query_size);
+        ptcl_memcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
 
         if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-            if ((wcscmp(file_data.cFileName + file_name_size - 3, L".tm") == 0) ||
-                (wcscmp(file_data.cFileName + file_name_size - 4, L".tcl") == 0)) {
-                if (_w_tcl_minify_file(path)) {
-                    return 2;
-                }
+            if ((ptcl_strcmp(file_data.cFileName + file_name_size - 3, CHAR_LITERAL(".tm")) == 0) ||
+                (ptcl_strcmp(file_data.cFileName + file_name_size - 4, CHAR_LITERAL(".tcl")) == 0)) {
+                printf("%s\n", file_data.cFileName);
+                // if (_tcl_minify_file(path)) {
+                //     return 2;
+                // }
             }
         } else {
             _tcl_minify_folder(path, path_size - 1);
         }
-        free(path);
-    } while (FindNextFileW(file_handle, &file_data));
+    } while (ptcl_FindNextFile(file_handle, &file_data));
 
     FindClose(file_handle);
 
@@ -167,17 +199,14 @@ static inline int _tcl_minify_folder(const wchar_t *search_path, size_t search_p
 
 static PyObject *Py_tcl_minify_folder(PyObject *self, PyObject *arg) {
     Py_ssize_t path_size;
-    wchar_t *path = PyUnicode_AsWideCharString(arg, &path_size);
+    PyUnicode_PtclChar path = PyUnicode_AsPtclChar(arg, &path_size);
     if (unlikely(path == NULL)) {
         return NULL;
     }
 
     const int error = _tcl_minify_folder(path, path_size);
-    PyMem_Free(path);
 
-    if (error) {
-        PyErr_SetString(PyExc_OSError, "Error accessing folder");
-    }
+    _PyMem_Free_IfNeeded(path);
 
     return error ? NULL : Py_None;
 }
