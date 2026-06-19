@@ -1,0 +1,41 @@
+"""Tests for memory leaks in C extension modules."""
+
+import os
+import tempfile
+
+from psleak import MemoryLeakTestCase
+
+from personal_simple_tcl_minifier.parse import tcl_minify_file
+
+
+class TestLeaks(MemoryLeakTestCase):
+    warmup_times = 1
+
+    times = 20
+
+    retries = 4
+
+    def setUp(self) -> None:
+        self.malloc_env: str | None = os.getenv("PYTHONMALLOC")
+        os.environ["PYTHONMALLOC"] = "malloc"
+
+        if os.environ.get("PYTHONUNBUFFERED") != "1":
+            raise ValueError("Need to set env variable PYTHONUNBUFFERED=1")
+
+    def tearDown(self) -> None:
+        if self.malloc_env is not None:
+            os.environ["PYTHONMALLOC"] = self.malloc_env
+        else:
+            del os.environ["PYTHONMALLOC"]
+
+    def test_tcl_minify_file(self) -> None:
+        temp_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115
+        try:
+            try:
+                temp_file.write(b" set   a   1\n" * 20)
+            finally:
+                temp_file.close()
+
+            self.execute(tcl_minify_file, temp_file.name)
+        finally:
+            os.remove(temp_file.name)
