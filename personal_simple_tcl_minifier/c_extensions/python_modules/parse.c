@@ -149,7 +149,7 @@ static struct ReverseLinkedList *ReverseLinkedList_append(
     const ptcl_char *path,
     size_t path_size) {
     struct ReverseLinkedList *appended = malloc(sizeof(struct ReverseLinkedList));
-    appended->previous = NULL;
+    appended->previous = previous;
     appended->search_query = malloc((path_size + SEARCH_QUERY_EXTRA_CHARS) * sizeof(ptcl_char));
 
     ptcl_memcpy(appended->search_query, path, path_size);

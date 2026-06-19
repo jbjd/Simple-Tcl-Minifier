@@ -160,10 +160,12 @@ append re \\\\}""".strip()
 
     def test_minify_folder(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
-            subdir: str = os.path.join(tmp_dir, "asdf")
-            os.makedirs(subdir)
-            tcl_file1 = os.path.join(tmp_dir, "a.tcl")
-            tcl_file2 = os.path.join(subdir, "a.tm")
+            subdir1: str = os.path.join(tmp_dir, "tcl")
+            os.makedirs(subdir1)
+            subdir2: str = os.path.join(tmp_dir, "tk")
+            os.makedirs(subdir2)
+            tcl_file1 = os.path.join(subdir1, "a.tcl")
+            tcl_file2 = os.path.join(subdir2, "a.tm")
             non_tcl_file1 = os.path.join(tmp_dir, "a.abc")
 
             starting_content: str = " set   a   1"
