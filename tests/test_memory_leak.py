@@ -40,7 +40,7 @@ class TestLeaks(MemoryLeakTestCase):
         finally:
             os.remove(temp_file.name)
 
-    # TODO: move duplciated tmp file/folder setup to test utils
+    # TODO: move duplicated tmp file/folder setup to test utils
     def test_tcl_minify_folder(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             subdir: str = os.path.join(tmp_dir, "asdf")
