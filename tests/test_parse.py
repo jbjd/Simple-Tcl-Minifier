@@ -1,5 +1,3 @@
-import os
-import tempfile
 import unittest
 from tkinter import TclError, Tk
 
@@ -8,6 +6,7 @@ from personal_simple_tcl_minifier.parse import (
     tcl_minify_file,
     tcl_minify_folder,
 )
+from tests.utils import TestFile, TmpTclFile, TmpTclFolder
 
 
 class ParseTests(unittest.TestCase):
@@ -143,49 +142,20 @@ append re \\\\}""".strip()
         self._test_minifier(source, source, False)
 
     def test_minify_file(self):
-        # Ensure non-ascii handled
-        temp_file = tempfile.NamedTemporaryFile(prefix="三島", delete=False)  # noqa: SIM115
-        try:
-            try:
-                temp_file.write(b" set   a   1")
-            finally:
-                temp_file.close()
-
-            tcl_minify_file(temp_file.name)
-
-            with open(temp_file.name, encoding="utf-8") as fp:
-                assert fp.read() == "set a 1"
-        finally:
-            os.remove(temp_file.name)
+        # Ensure non-ascii handled in file name
+        with TmpTclFile(TestFile("三島", b" set   a   1", b"set a 1")) as tmp_file:
+            tcl_minify_file(tmp_file)
 
     def test_minify_folder(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            subdir1: str = os.path.join(tmp_dir, "tcl")
-            os.makedirs(subdir1)
-            subdir2: str = os.path.join(tmp_dir, "tk")
-            os.makedirs(subdir2)
-            tcl_file1 = os.path.join(subdir1, "a.tcl")
-            tcl_file2 = os.path.join(subdir2, "a.tm")
-            non_tcl_file1 = os.path.join(tmp_dir, "a.abc")
+        starting_content: bytes = b" set   a   1"
+        expected_content: bytes = b"set a 1"
 
-            starting_content: str = " set   a   1"
-            expected_content: str = "set a 1"
+        file1 = TestFile("a.abc", starting_content, starting_content)
+        file2 = TestFile("tcl/tcl8.4/a.tcl", starting_content, expected_content)
+        file3 = TestFile("tk/a.tm", starting_content, expected_content)
 
-            with open(tcl_file1, "w") as f:
-                f.write(starting_content)
-            with open(tcl_file2, "w") as f:
-                f.write(starting_content)
-            with open(non_tcl_file1, "w") as f:
-                f.write(starting_content)
-
+        with TmpTclFolder([file1, file2, file3]) as tmp_dir:
             tcl_minify_folder(tmp_dir)
-
-            with open(tcl_file1, encoding="utf-8") as f:
-                assert f.read() == expected_content
-            with open(tcl_file2, encoding="utf-8") as f:
-                assert f.read() == expected_content
-            with open(non_tcl_file1, encoding="utf-8") as f:
-                assert f.read() == starting_content
 
     def _test_minifier(
         self, source: str, expected_output: str, validate: bool = True
