@@ -3,7 +3,11 @@ import tempfile
 import unittest
 from tkinter import TclError, Tk
 
-from personal_simple_tcl_minifier.parse import tcl_minify, tcl_minify_file
+from personal_simple_tcl_minifier.parse import (
+    tcl_minify,
+    tcl_minify_file,
+    tcl_minify_folder,
+)
 
 
 class ParseTests(unittest.TestCase):
@@ -153,6 +157,33 @@ append re \\\\}""".strip()
                 assert fp.read() == "set a 1"
         finally:
             os.remove(temp_file.name)
+
+    def test_minify_folder(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            subdir: str = os.path.join(tmp_dir, "asdf")
+            os.makedirs(subdir)
+            tcl_file1 = os.path.join(tmp_dir, "a.tcl")
+            tcl_file2 = os.path.join(subdir, "a.tm")
+            non_tcl_file1 = os.path.join(tmp_dir, "a.abc")
+
+            starting_content: str = " set   a   1"
+            expected_content: str = "set a 1"
+
+            with open(tcl_file1, "w") as f:
+                f.write(starting_content)
+            with open(tcl_file2, "w") as f:
+                f.write(starting_content)
+            with open(non_tcl_file1, "w") as f:
+                f.write(starting_content)
+
+            tcl_minify_folder(tmp_dir)
+
+            with open(tcl_file1, encoding="utf-8") as f:
+                assert f.read() == expected_content
+            with open(tcl_file2, encoding="utf-8") as f:
+                assert f.read() == expected_content
+            with open(non_tcl_file1, encoding="utf-8") as f:
+                assert f.read() == starting_content
 
     def _test_minifier(
         self, source: str, expected_output: str, validate: bool = True

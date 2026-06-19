@@ -8,3 +8,8 @@ def tcl_minify_file(path: str) -> str:
     """Minifies a tcl script file.
 
     :param path: Tcl file"""
+
+def tcl_minify_folder(path: str) -> str:
+    """Minifies all .tcl/.tm script files in a folder.
+
+    :param path: Folder to check"""

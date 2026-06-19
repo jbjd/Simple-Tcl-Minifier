@@ -14,7 +14,7 @@ if os.name == "nt" and not os.path.exists("setup.cfg"):
 compiler=mingw32""")
 
 
-args: list[str] = ["-O3", "-march=native", "-mtune=native", "-Wall"]
+args: list[str] = ["-O3", "-march=native", "-mtune=native", "-Wall", "-Werror"]
 
 if sys.platform == "win32" and not os.environ.get("PTCL_DISALLOW_UTF8_CHECK"):
     import ctypes
