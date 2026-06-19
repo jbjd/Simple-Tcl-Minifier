@@ -264,7 +264,7 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             if (dp->d_type == DT_DIR) {
                 folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
             } else {
-                if (_has_tcl_file_ext(file_data.cFileName, file_name_size)) {
+                if (_has_tcl_file_ext(dp->d_name, file_name_size)) {
                     if (_tcl_minify_file(path)) {
                         return 2;
                     }
