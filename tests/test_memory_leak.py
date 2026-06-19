@@ -1,11 +1,11 @@
 """Tests for memory leaks in C extension modules."""
 
 import os
-import tempfile
 
 from psleak import MemoryLeakTestCase
 
 from personal_simple_tcl_minifier.parse import tcl_minify_file, tcl_minify_folder
+from tests.utils import TestFile, TmpTclFile, TmpTclFolder
 
 
 class TestLeaks(MemoryLeakTestCase):
@@ -15,12 +15,16 @@ class TestLeaks(MemoryLeakTestCase):
 
     retries = 4
 
+    __slots__ = ("sample_large_tcl_script",)
+
     def setUp(self) -> None:
         self.malloc_env: str | None = os.getenv("PYTHONMALLOC")
         os.environ["PYTHONMALLOC"] = "malloc"
 
         if os.environ.get("PYTHONUNBUFFERED") != "1":
             raise ValueError("Need to set env variable PYTHONUNBUFFERED=1")
+
+        self.sample_large_tcl_script: bytes = b" set   a   1\n" * 80
 
     def tearDown(self) -> None:
         if self.malloc_env is not None:
@@ -29,35 +33,16 @@ class TestLeaks(MemoryLeakTestCase):
             del os.environ["PYTHONMALLOC"]
 
     def test_tcl_minify_file(self) -> None:
-        temp_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115
-        try:
-            try:
-                temp_file.write(b" set   a   1\n" * 80)
-            finally:
-                temp_file.close()
-
-            self.execute(tcl_minify_file, temp_file.name)
-        finally:
-            os.remove(temp_file.name)
+        with TmpTclFile(TestFile("三島", self.sample_large_tcl_script)) as tmp_file:
+            self.execute(tcl_minify_file, tmp_file)
 
     # TODO: move duplicated tmp file/folder setup to test utils
     def test_tcl_minify_folder(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            subdir1: str = os.path.join(tmp_dir, "tcl")
-            os.makedirs(subdir1)
-            subdir2: str = os.path.join(tmp_dir, "tk")
-            os.makedirs(subdir2)
-            tcl_file1 = os.path.join(subdir1, "a.tcl")
-            tcl_file2 = os.path.join(subdir2, "a.tm")
-            non_tcl_file1 = os.path.join(tmp_dir, "a.abc")
+        starting_content: bytes = self.sample_large_tcl_script
 
-            starting_content: str = " set   a   1" * 80
+        file1 = TestFile("a.abc", starting_content)
+        file2 = TestFile("tcl/tcl8.4/a.tcl", starting_content)
+        file3 = TestFile("tk/a.tm", starting_content)
 
-            with open(tcl_file1, "w") as f:
-                f.write(starting_content)
-            with open(tcl_file2, "w") as f:
-                f.write(starting_content)
-            with open(non_tcl_file1, "w") as f:
-                f.write(starting_content)
-
+        with TmpTclFolder([file1, file2, file3]) as tmp_dir:
             tcl_minify_folder(tmp_dir)
