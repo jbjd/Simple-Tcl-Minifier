@@ -11,7 +11,7 @@ from personal_simple_tcl_minifier.parse import tcl_minify_file, tcl_minify_folde
 class TestLeaks(MemoryLeakTestCase):
     warmup_times = 1
 
-    times = 20
+    times = 40
 
     retries = 4
 
@@ -32,7 +32,7 @@ class TestLeaks(MemoryLeakTestCase):
         temp_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115
         try:
             try:
-                temp_file.write(b" set   a   1\n" * 20)
+                temp_file.write(b" set   a   1\n" * 80)
             finally:
                 temp_file.close()
 
@@ -49,7 +49,7 @@ class TestLeaks(MemoryLeakTestCase):
             tcl_file2 = os.path.join(subdir, "a.tm")
             non_tcl_file1 = os.path.join(tmp_dir, "a.abc")
 
-            starting_content: str = " set   a   1" * 20
+            starting_content: str = " set   a   1" * 80
 
             with open(tcl_file1, "w") as f:
                 f.write(starting_content)
