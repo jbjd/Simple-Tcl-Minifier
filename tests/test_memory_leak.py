@@ -5,13 +5,13 @@ import tempfile
 
 from psleak import MemoryLeakTestCase
 
-from personal_simple_tcl_minifier.parse import tcl_minify_file
+from personal_simple_tcl_minifier.parse import tcl_minify_file, tcl_minify_folder
 
 
 class TestLeaks(MemoryLeakTestCase):
     warmup_times = 1
 
-    times = 20
+    times = 40
 
     retries = 4
 
@@ -32,10 +32,30 @@ class TestLeaks(MemoryLeakTestCase):
         temp_file = tempfile.NamedTemporaryFile(delete=False)  # noqa: SIM115
         try:
             try:
-                temp_file.write(b" set   a   1\n" * 20)
+                temp_file.write(b" set   a   1\n" * 80)
             finally:
                 temp_file.close()
 
             self.execute(tcl_minify_file, temp_file.name)
         finally:
             os.remove(temp_file.name)
+
+    # TODO: move duplicated tmp file/folder setup to test utils
+    def test_tcl_minify_folder(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            subdir: str = os.path.join(tmp_dir, "asdf")
+            os.makedirs(subdir)
+            tcl_file1 = os.path.join(tmp_dir, "a.tcl")
+            tcl_file2 = os.path.join(subdir, "a.tm")
+            non_tcl_file1 = os.path.join(tmp_dir, "a.abc")
+
+            starting_content: str = " set   a   1" * 80
+
+            with open(tcl_file1, "w") as f:
+                f.write(starting_content)
+            with open(tcl_file2, "w") as f:
+                f.write(starting_content)
+            with open(non_tcl_file1, "w") as f:
+                f.write(starting_content)
+
+            tcl_minify_folder(tmp_dir)
