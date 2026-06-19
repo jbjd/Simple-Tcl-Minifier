@@ -5,7 +5,7 @@ import tempfile
 
 from psleak import MemoryLeakTestCase
 
-from personal_simple_tcl_minifier.parse import tcl_minify_file
+from personal_simple_tcl_minifier.parse import tcl_minify_file, tcl_minify_folder
 
 
 class TestLeaks(MemoryLeakTestCase):
@@ -39,3 +39,22 @@ class TestLeaks(MemoryLeakTestCase):
             self.execute(tcl_minify_file, temp_file.name)
         finally:
             os.remove(temp_file.name)
+
+    def test_tcl_minify_folder(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            subdir: str = os.path.join(tmp_dir, "asdf")
+            os.makedirs(subdir)
+            tcl_file1 = os.path.join(tmp_dir, "a.tcl")
+            tcl_file2 = os.path.join(subdir, "a.tm")
+            non_tcl_file1 = os.path.join(tmp_dir, "a.abc")
+
+            starting_content: str = " set   a   1" * 20
+
+            with open(tcl_file1, "w") as f:
+                f.write(starting_content)
+            with open(tcl_file2, "w") as f:
+                f.write(starting_content)
+            with open(non_tcl_file1, "w") as f:
+                f.write(starting_content)
+
+            tcl_minify_folder(tmp_dir)
