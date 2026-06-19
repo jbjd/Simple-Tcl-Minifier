@@ -237,11 +237,10 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             }
         } while (ptcl_FindNextFile(file_handle, &file_data));
 
-        free(search_query);
         FindClose(file_handle);
 #else
         struct dirent *dp;
-        DIR *directory = opendir(base_path);
+        DIR *directory = opendir(search_query);
 
         if (!directory) {
             PyErr_SetString(PyExc_OSError, "Can't find or access folder");
@@ -275,6 +274,7 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
         closedir(directory);
 
 #endif
+        free(search_query);
     }
 
     return 0;
