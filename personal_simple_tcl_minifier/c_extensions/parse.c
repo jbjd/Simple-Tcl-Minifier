@@ -53,7 +53,7 @@ static inline bool _is_string(char c) {
 
 char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
     size_t index_source = 0;
-    char *tcl_minified = malloc((sizeof(char) * size));
+    char *tcl_minified = malloc(sizeof(char) * size);
     size_t index_minified = 0;
 
     int depth = 0;
