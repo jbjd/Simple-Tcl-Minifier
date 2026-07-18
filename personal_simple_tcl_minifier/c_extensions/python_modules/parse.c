@@ -26,6 +26,7 @@
 #define CHAR_LITERAL(x) x
 #define ptcl_char char
 #define ptcl_memcpy memcpy
+#define ptcl_memcmp memcmp
 #define ptcl_strcmp strcmp
 #define ptcl_strlen strlen
 #define ptcl_open_r_plus(path) fopen(path, "r+")
@@ -38,6 +39,7 @@
 #define CHAR_LITERAL(x) L##x
 #define ptcl_char wchar_t
 #define ptcl_memcpy wmemcpy
+#define ptcl_memcmp wmemcmp
 #define ptcl_strcmp wcscmp
 #define ptcl_strlen wcslen
 #define ptcl_open_r_plus(path) _wfopen(path, L"r+")
@@ -185,8 +187,8 @@ static inline bool _ignore_path(const ptcl_char *path) {
 }
 
 static inline bool _has_tcl_file_ext(const ptcl_char *file_name, size_t file_name_size) {
-    return ptcl_strcmp(file_name + file_name_size - 3, CHAR_LITERAL(".tm")) == 0 ||
-           ptcl_strcmp(file_name + file_name_size - 4, CHAR_LITERAL(".tcl")) == 0;
+    return ptcl_memcmp(file_name + file_name_size - 3, CHAR_LITERAL(".tm"), 3) == 0 ||
+           ptcl_memcmp(file_name + file_name_size - 4, CHAR_LITERAL(".tcl"), 4) == 0;
 }
 
 static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search_path_size) {
