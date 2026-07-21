@@ -147,7 +147,8 @@ struct ReverseLinkedList
 static struct ReverseLinkedList *ReverseLinkedList_append(
     struct ReverseLinkedList *previous,
     const ptcl_char *path,
-    size_t path_size) {
+    size_t path_size
+) {
     struct ReverseLinkedList *appended = malloc(sizeof(struct ReverseLinkedList));
     appended->previous = previous;
     appended->search_query = malloc((path_size + SEARCH_QUERY_EXTRA_CHARS) * sizeof(ptcl_char));
@@ -213,7 +214,8 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             &file_data,
             FindExSearchNameMatch,
             NULL,
-            FIND_FIRST_EX_LARGE_FETCH);
+            FIND_FIRST_EX_LARGE_FETCH
+        );
 
         if (file_handle == INVALID_HANDLE_VALUE) {
             PyErr_SetString(PyExc_OSError, "Can't find or access folder");
