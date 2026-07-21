@@ -11,7 +11,6 @@ build/
 .venv
 .coverage
 
-setup.cfg
 *.pyd
 *.ipynb
 test.py

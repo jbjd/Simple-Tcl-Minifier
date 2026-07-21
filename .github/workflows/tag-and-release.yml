@@ -32,5 +32,4 @@ jobs:
         run: |
           gh release create "$tag" \
             --repo="$GITHUB_REPOSITORY" --latest \
-            --title="$tag" --fail-on-no-commits \
-            --generate-notes
+            --title="$tag" --fail-on-no-commits

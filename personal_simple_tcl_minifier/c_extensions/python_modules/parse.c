@@ -26,7 +26,7 @@
 #define CHAR_LITERAL(x) x
 #define ptcl_char char
 #define ptcl_memcpy memcpy
-#define ptcl_strcmp strcmp
+#define ptcl_memcmp memcmp
 #define ptcl_strlen strlen
 #define ptcl_open_r_plus(path) fopen(path, "r+")
 #define ptcl_FIND_DATA _WIN32_FIND_DATAA
@@ -38,7 +38,7 @@
 #define CHAR_LITERAL(x) L##x
 #define ptcl_char wchar_t
 #define ptcl_memcpy wmemcpy
-#define ptcl_strcmp wcscmp
+#define ptcl_memcmp wmemcmp
 #define ptcl_strlen wcslen
 #define ptcl_open_r_plus(path) _wfopen(path, L"r+")
 #define ptcl_FIND_DATA _WIN32_FIND_DATAW
@@ -147,7 +147,8 @@ struct ReverseLinkedList
 static struct ReverseLinkedList *ReverseLinkedList_append(
     struct ReverseLinkedList *previous,
     const ptcl_char *path,
-    size_t path_size) {
+    size_t path_size
+) {
     struct ReverseLinkedList *appended = malloc(sizeof(struct ReverseLinkedList));
     appended->previous = previous;
     appended->search_query = malloc((path_size + SEARCH_QUERY_EXTRA_CHARS) * sizeof(ptcl_char));
@@ -179,14 +180,20 @@ static inline struct ReverseLinkedList *ReverseLinkedList_pop(struct ReverseLink
     return previous;
 }
 
-static inline bool _ignore_path(const ptcl_char *path) {
-    return ptcl_strcmp(path, CHAR_LITERAL(".")) == 0 ||
-           ptcl_strcmp(path, CHAR_LITERAL("..")) == 0;
+static inline bool _ignore_path(const ptcl_char *path, size_t path_size) {
+    switch (path_size) {
+    case 1:
+        return ptcl_memcmp(path, CHAR_LITERAL("."), 1) == 0;
+    case 2:
+        return ptcl_memcmp(path, CHAR_LITERAL(".."), 2) == 0;
+    default:
+        return false;
+    }
 }
 
 static inline bool _has_tcl_file_ext(const ptcl_char *file_name, size_t file_name_size) {
-    return ptcl_strcmp(file_name + file_name_size - 3, CHAR_LITERAL(".tm")) == 0 ||
-           ptcl_strcmp(file_name + file_name_size - 4, CHAR_LITERAL(".tcl")) == 0;
+    return ptcl_memcmp(file_name + file_name_size - 3, CHAR_LITERAL(".tm"), 3) == 0 ||
+           ptcl_memcmp(file_name + file_name_size - 4, CHAR_LITERAL(".tcl"), 4) == 0;
 }
 
 static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search_path_size) {
@@ -207,7 +214,8 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             &file_data,
             FindExSearchNameMatch,
             NULL,
-            FIND_FIRST_EX_LARGE_FETCH);
+            FIND_FIRST_EX_LARGE_FETCH
+        );
 
         if (file_handle == INVALID_HANDLE_VALUE) {
             PyErr_SetString(PyExc_OSError, "Can't find or access folder");
@@ -215,11 +223,11 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
         }
 
         do {
-            if (_ignore_path(file_data.cFileName)) {
+            const size_t file_name_size = ptcl_strlen(file_data.cFileName);
+            if (_ignore_path(file_data.cFileName, file_name_size)) {
                 continue;
             }
 
-            const size_t file_name_size = ptcl_strlen(file_data.cFileName);
             const size_t path_size = search_query_size + file_name_size - 1;
             ptcl_char path[path_size + 1];
 
@@ -248,11 +256,11 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
         }
 
         while ((dp = readdir(directory)) != NULL) {
-            if (_ignore_path(dp->d_name)) {
+            const size_t file_name_size = ptcl_strlen(dp->d_name);
+            if (_ignore_path(dp->d_name, file_name_size)) {
                 continue;
             }
 
-            const size_t file_name_size = ptcl_strlen(dp->d_name);
             const size_t path_size = search_query_size + file_name_size;
             ptcl_char path[path_size + 1];
 
