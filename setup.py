@@ -1,6 +1,9 @@
 import os
 import sys
 
+if sys.platform != "win32":
+    os.environ["CC"] = "gcc"
+
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
 
@@ -14,8 +17,6 @@ class CustomBuildExt(build_ext):
 
         if sys.platform == "win32":
             self.compiler = "mingw32"
-        else:
-            self.compiler = "gcc"
 
 
 args: list[str] = [
