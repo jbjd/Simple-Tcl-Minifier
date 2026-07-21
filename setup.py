@@ -2,16 +2,20 @@ import os
 import sys
 
 from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
 PACKAGE: str = "personal_simple_tcl_minifier"
 C_FOLDER: str = f"{PACKAGE}/c_extensions"
 
-# This is stupid and I hate that I have to do it
-# pip would not accept envs or args I found online to set compiler
-if os.name == "nt" and not os.path.exists("setup.cfg"):
-    with open("setup.cfg", "w", encoding="utf-8") as fp:
-        fp.write("""[build]
-compiler=mingw32""")
+
+class CustomBuildExt(build_ext):
+    def finalize_options(self) -> None:
+        super().finalize_options()
+
+        if sys.platform == "win32":
+            self.compiler = "mingw32"
+        else:
+            self.compiler = "gcc"
 
 
 args: list[str] = [
@@ -52,4 +56,5 @@ parse_extension = Extension(
 setup(
     ext_modules=[parse_extension],
     exclude_package_data={"": ["*.c", "*.h"]},
+    cmdclass={"build_ext": CustomBuildExt},
 )
