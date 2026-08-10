@@ -228,11 +228,12 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
                 continue;
             }
 
-            const size_t path_size = search_query_size + file_name_size - 1;
+            const size_t folder_size = search_query_size - 1;
+            const size_t path_size = folder_size + file_name_size;
             ptcl_char path[path_size + 1];
 
-            ptcl_memcpy(path, search_query, search_query_size);
-            ptcl_memcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
+            ptcl_memcpy(path, search_query, folder_size);
+            ptcl_memcpy(path + folder_size, file_data.cFileName, file_name_size + 1);
 
             if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
                 if (_has_tcl_file_ext(file_data.cFileName, file_name_size)) {
