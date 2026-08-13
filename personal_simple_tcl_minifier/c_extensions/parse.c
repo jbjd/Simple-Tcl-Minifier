@@ -61,8 +61,6 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
     while (index_source < size) {
         char current_char = tcl_source[index_source];
 
-        size_t start = index_source++;
-
         if (_is_whitespace_or_semicolon(current_char)) {
             if (index_minified > 0) {
                 if (_is_whitespace_or_semicolon(tcl_minified[index_minified - 1])) {
@@ -74,6 +72,8 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
                     tcl_minified[index_minified++] = current_char;
                 }
             }
+
+            ++index_source;
         } else if (_is_bracket(current_char)) {
             switch (current_char) {
             case '{':
@@ -87,7 +87,9 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
                 break;
             }
             tcl_minified[index_minified++] = current_char;
+            ++index_source;
         } else if (_is_backslash(current_char)) {
+            ++index_source;
             if (index_source < size) {
                 if (tcl_source[index_source] == '\n') {
                     if (index_minified > 0 && !isspace(tcl_minified[index_minified - 1])) {
@@ -105,10 +107,10 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
                 tcl_minified[index_minified++] = '\\';
             }
         } else if (_is_comment(current_char, tcl_minified, index_minified)) {
+            const size_t start = index_source;
             int open_bracket_count = 0;
             int close_bracket_count = 0;
-            while (index_source < size) {
-                ++index_source;
+            while (++index_source < size) {
                 switch (tcl_source[index_source]) {
                 case '\\':
                     if (index_source + 1 < size) {
@@ -135,6 +137,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
                 _APPEND_RANGE(start, index_source)
             }
         } else if (_is_string(current_char)) {
+            size_t start = index_source++;
 
             while (index_source < size) {
                 char string_current_char = tcl_source[index_source];
@@ -170,6 +173,7 @@ char *tcl_minify(const char *tcl_source, size_t size, size_t *size_out) {
         string_while_end:
             _APPEND_RANGE(start, index_source)
         } else {
+            const size_t start = index_source++;
             while (index_source < size && !_is_delimiter(tcl_source[index_source])) {
                 ++index_source;
             }
