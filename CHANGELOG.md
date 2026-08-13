@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-08-12
+
+- [Fix] Remove memory leaks on failure cases
+- [Improvement] Truncating after file write
+
 ## [1.0.1] - 2026-07-20
 
 - [Refactor] Better way of enforcing gcc compiler

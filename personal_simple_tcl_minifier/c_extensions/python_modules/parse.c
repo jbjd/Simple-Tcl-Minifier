@@ -183,6 +183,15 @@ static inline struct ReverseLinkedList *ReverseLinkedList_pop(struct ReverseLink
     return previous;
 }
 
+static void ReverseLinkedList_clear(struct ReverseLinkedList *list) {
+    while (list != NULL) {
+        struct ReverseLinkedList *previous = list->previous;
+        free(list->search_query);
+        free(list);
+        list = previous;
+    }
+}
+
 static inline bool _ignore_path(const ptcl_char *path, size_t path_size) {
     switch (path_size) {
     case 1:
@@ -221,6 +230,7 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
         );
 
         if (file_handle == INVALID_HANDLE_VALUE) {
+            free(search_query);
             PyErr_SetString(PyExc_OSError, "Can't find or access folder");
             return 1;
         }
@@ -241,6 +251,8 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
                 if (_has_tcl_file_ext(file_data.cFileName, file_name_size)) {
                     if (_tcl_minify_file(path)) {
+                        free(search_query);
+                        ReverseLinkedList_clear(folders_to_visit_stack);
                         return 2;
                     }
                 }
@@ -255,6 +267,7 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
         DIR *directory = opendir(search_query);
 
         if (!directory) {
+            free(search_query);
             PyErr_SetString(PyExc_OSError, "Can't find or access folder");
             return 1;
         }
@@ -277,6 +290,8 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             } else {
                 if (_has_tcl_file_ext(dp->d_name, file_name_size)) {
                     if (_tcl_minify_file(path)) {
+                        free(search_query);
+                        ReverseLinkedList_clear(folders_to_visit_stack);
                         return 2;
                     }
                 }
