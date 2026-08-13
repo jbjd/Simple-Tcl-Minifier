@@ -15,11 +15,17 @@
 #define ftruncate _chsize
 #define fileno _fileno
 #define SEARCH_QUERY_EXTRA_CHARS 3
+#define ptcl_close_folder FindClose
+#define ptcl_FolderReader HANDLE
+#define ptcl_FolderReadError INVALID_HANDLE_VALUE
 #else
 #include <dirent.h>
 #include <string.h>
 #define SEARCH_QUERY_EXTRA_CHARS 2
 #define PTCL_UTF8
+#define ptcl_close_folder closedir
+#define ptcl_FolderReader DIR *
+#define ptcl_FolderReadError 0
 #endif
 
 #ifdef PTCL_UTF8
@@ -91,6 +97,7 @@ static int _tcl_minify_file(const ptcl_char *path) {
 
     const size_t read_bytes = fread(source, sizeof(char), file_size, fp);
     if (unlikely(ferror(fp))) {
+        free(source);
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error reading TCL file");
         return 1;
@@ -100,7 +107,7 @@ static int _tcl_minify_file(const ptcl_char *path) {
     char *minified_source = tcl_minify(source, read_bytes, &minified_size);
     free(source);
 
-    if (ftruncate(fileno(fp), 0) < 0) {
+    if (unlikely(ftruncate(fileno(fp), 0) < 0)) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error truncating TCL file");
         return 1;
@@ -180,6 +187,15 @@ static inline struct ReverseLinkedList *ReverseLinkedList_pop(struct ReverseLink
     return previous;
 }
 
+static void ReverseLinkedList_clear(struct ReverseLinkedList *list) {
+    while (list != NULL) {
+        struct ReverseLinkedList *previous = list->previous;
+        free(list->search_query);
+        free(list);
+        list = previous;
+    }
+}
+
 static inline bool _ignore_path(const ptcl_char *path, size_t path_size) {
     switch (path_size) {
     case 1:
@@ -208,7 +224,7 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
 
 #ifdef _WIN32
         struct ptcl_FIND_DATA file_data;
-        HANDLE file_handle = ptcl_FindFirstFileEx(
+        ptcl_FolderReader folder_reader = ptcl_FindFirstFileEx(
             search_query,
             FindExInfoBasic,
             &file_data,
@@ -216,11 +232,17 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             NULL,
             FIND_FIRST_EX_LARGE_FETCH
         );
+#else
+        ptcl_FolderReader folder_reader = opendir(search_query);
+#endif
 
-        if (file_handle == INVALID_HANDLE_VALUE) {
+        if (folder_reader == ptcl_FolderReadError) {
+            free(search_query);
             PyErr_SetString(PyExc_OSError, "Can't find or access folder");
             return 1;
         }
+
+#ifdef _WIN32
 
         do {
             const size_t file_name_size = ptcl_strlen(file_data.cFileName);
@@ -228,34 +250,27 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
                 continue;
             }
 
-            const size_t path_size = search_query_size + file_name_size - 1;
+            const size_t folder_size = search_query_size - 1;
+            const size_t path_size = folder_size + file_name_size;
             ptcl_char path[path_size + 1];
 
-            ptcl_memcpy(path, search_query, search_query_size);
-            ptcl_memcpy(path + search_query_size - 1, file_data.cFileName, file_name_size + 1);
+            ptcl_memcpy(path, search_query, folder_size);
+            ptcl_memcpy(path + folder_size, file_data.cFileName, file_name_size + 1);
 
-            if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-                if (_has_tcl_file_ext(file_data.cFileName, file_name_size)) {
-                    if (_tcl_minify_file(path)) {
-                        return 2;
-                    }
-                }
-            } else {
+            if (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
                 folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
+            } else if (_has_tcl_file_ext(file_data.cFileName, file_name_size)) {
+                if (_tcl_minify_file(path)) {
+                    free(search_query);
+                    ReverseLinkedList_clear(folders_to_visit_stack);
+                    return 2;
+                }
             }
-        } while (ptcl_FindNextFile(file_handle, &file_data));
+        } while (ptcl_FindNextFile(folder_reader, &file_data));
 
-        FindClose(file_handle);
 #else
         struct dirent *dp;
-        DIR *directory = opendir(search_query);
-
-        if (!directory) {
-            PyErr_SetString(PyExc_OSError, "Can't find or access folder");
-            return 1;
-        }
-
-        while ((dp = readdir(directory)) != NULL) {
+        while ((dp = readdir(folder_reader)) != NULL) {
             const size_t file_name_size = ptcl_strlen(dp->d_name);
             if (_ignore_path(dp->d_name, file_name_size)) {
                 continue;
@@ -267,21 +282,19 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             ptcl_memcpy(path, search_query, search_query_size);
             ptcl_memcpy(path + search_query_size, dp->d_name, file_name_size + 1);
 
-            // If the entry is a directory, recurse into it
             if (dp->d_type == DT_DIR) {
                 folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
-            } else {
-                if (_has_tcl_file_ext(dp->d_name, file_name_size)) {
-                    if (_tcl_minify_file(path)) {
-                        return 2;
-                    }
+            } else if (_has_tcl_file_ext(dp->d_name, file_name_size)) {
+                if (_tcl_minify_file(path)) {
+                    free(search_query);
+                    ReverseLinkedList_clear(folders_to_visit_stack);
+                    return 2;
                 }
             }
         }
 
-        closedir(directory);
-
 #endif
+        ptcl_close_folder(folder_reader);
         free(search_query);
     }
 

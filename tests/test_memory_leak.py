@@ -45,4 +45,13 @@ class TestLeaks(MemoryLeakTestCase):
         file3 = TestFile("tk/a.tm", starting_content)
 
         with TmpTclFolder([file1, file2, file3]) as tmp_dir:
-            tcl_minify_folder(tmp_dir)
+            self.execute(tcl_minify_folder, tmp_dir)
+
+    def test_tcl_minify_folder_does_not_exist(self) -> None:
+        def _inner() -> None:
+            try:
+                tcl_minify_folder("abcdef12345678901234567890" * 10)
+            except OSError:
+                pass
+
+        self.execute(_inner)
