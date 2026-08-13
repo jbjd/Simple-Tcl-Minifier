@@ -107,23 +107,21 @@ static int _tcl_minify_file(const ptcl_char *path) {
     char *minified_source = tcl_minify(source, read_bytes, &minified_size);
     free(source);
 
+    if (unlikely(ftruncate(fileno(fp), 0) < 0)) {
+        fclose(fp);
+        PyErr_SetString(PyExc_OSError, "Error truncating TCL file");
+        return 1;
+    }
     rewind(fp);
 
     const size_t written_bytes = fwrite(minified_source, sizeof(char), minified_size, fp);
+    fclose(fp);
     free(minified_source);
 
     if (written_bytes != minified_size) {
         PyErr_SetString(PyExc_OSError, "Error writing TCL file");
         return 1;
     }
-
-    if (unlikely(ftruncate(fileno(fp), minified_size) < 0)) {
-        fclose(fp);
-        PyErr_SetString(PyExc_OSError, "Error truncating TCL file");
-        return 1;
-    }
-
-    fclose(fp);
 
     return 0;
 }
