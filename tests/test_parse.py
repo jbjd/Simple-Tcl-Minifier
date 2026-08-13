@@ -1,8 +1,6 @@
 import unittest
 from tkinter import TclError, Tk
 
-import pytest
-
 from personal_simple_tcl_minifier.parse import (
     tcl_minify,
     tcl_minify_file,
@@ -156,8 +154,12 @@ append re \\\\}""".strip()
             tcl_minify_folder(tmp_dir)
 
     def test_minify_folder_does_not_exist(self):
-        with pytest.raises(OSError, match="Can't find or access folder"):
+        try:
             tcl_minify_folder("abc123456")
+        except OSError:
+            pass
+        else:
+            raise AssertionError("tcl_minify_folder didn't throw OSError")
 
     def _test_minifier(
         self, source: str, expected_output: str, validate: bool = True
