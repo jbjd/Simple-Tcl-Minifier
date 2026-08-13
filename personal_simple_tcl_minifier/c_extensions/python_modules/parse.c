@@ -15,11 +15,17 @@
 #define ftruncate _chsize
 #define fileno _fileno
 #define SEARCH_QUERY_EXTRA_CHARS 3
+#define ptcl_close_folder FindClose
+#define ptcl_FolderReader HANDLE
+#define ptcl_FolderReadError INVALID_HANDLE_VALUE
 #else
 #include <dirent.h>
 #include <string.h>
 #define SEARCH_QUERY_EXTRA_CHARS 2
 #define PTCL_UTF8
+#define ptcl_close_folder closedir
+#define ptcl_FolderReader DIR *
+#define ptcl_FolderReadError 0
 #endif
 
 #ifdef PTCL_UTF8
@@ -220,7 +226,7 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
 
 #ifdef _WIN32
         struct ptcl_FIND_DATA file_data;
-        HANDLE file_handle = ptcl_FindFirstFileEx(
+        ptcl_FolderReader folder_reader = ptcl_FindFirstFileEx(
             search_query,
             FindExInfoBasic,
             &file_data,
@@ -228,12 +234,17 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             NULL,
             FIND_FIRST_EX_LARGE_FETCH
         );
+#else
+        ptcl_FolderReader folder_reader = opendir(search_query);
+#endif
 
-        if (file_handle == INVALID_HANDLE_VALUE) {
+        if (folder_reader == ptcl_FolderReadError) {
             free(search_query);
             PyErr_SetString(PyExc_OSError, "Can't find or access folder");
             return 1;
         }
+
+#ifdef _WIN32
 
         do {
             const size_t file_name_size = ptcl_strlen(file_data.cFileName);
@@ -259,20 +270,11 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             } else {
                 folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
             }
-        } while (ptcl_FindNextFile(file_handle, &file_data));
+        } while (ptcl_FindNextFile(folder_reader, &file_data));
 
-        FindClose(file_handle);
 #else
         struct dirent *dp;
-        DIR *directory = opendir(search_query);
-
-        if (!directory) {
-            free(search_query);
-            PyErr_SetString(PyExc_OSError, "Can't find or access folder");
-            return 1;
-        }
-
-        while ((dp = readdir(directory)) != NULL) {
+        while ((dp = readdir(folder_reader)) != NULL) {
             const size_t file_name_size = ptcl_strlen(dp->d_name);
             if (_ignore_path(dp->d_name, file_name_size)) {
                 continue;
@@ -284,7 +286,6 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             ptcl_memcpy(path, search_query, search_query_size);
             ptcl_memcpy(path + search_query_size, dp->d_name, file_name_size + 1);
 
-            // If the entry is a directory, recurse into it
             if (dp->d_type == DT_DIR) {
                 folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
             } else {
@@ -298,9 +299,8 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             }
         }
 
-        closedir(directory);
-
 #endif
+        ptcl_close_folder(folder_reader);
         free(search_query);
     }
 

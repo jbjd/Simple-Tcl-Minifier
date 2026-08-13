@@ -1,6 +1,8 @@
 import unittest
 from tkinter import TclError, Tk
 
+import pytest
+
 from personal_simple_tcl_minifier.parse import (
     tcl_minify,
     tcl_minify_file,
@@ -82,8 +84,7 @@ return 0}""".strip()
         self._test_minifier(source, expected_output)
 
     def test_blackslash_newline2(self):
-        source: str = """set foo\\
-        1"""
+        source: str = "set foo\\\n        1"
         expected_output: str = "set foo 1"
 
         self._test_minifier(source, expected_output)
@@ -96,11 +97,8 @@ set foo 1"""
         self._test_minifier(source, expected_output)
 
     def test_backslash_space(self):
-        source: str = '''set a "world  \\ 
-            t"'''  # noqa: W291
-        expected_output: str = '''set a "world  \\ 
-            t"'''  # noqa: W291
-        self._test_minifier(source, expected_output)
+        source: str = 'set a "world  \\ \n  t"'
+        self._test_minifier(source, source)
 
     def test_backslash_literal(self):
         source: str = '''set s "world  \\\\
@@ -156,6 +154,10 @@ append re \\\\}""".strip()
 
         with TmpTclFolder([file1, file2, file3]) as tmp_dir:
             tcl_minify_folder(tmp_dir)
+
+    def test_minify_folder_does_not_exist(self):
+        with pytest.raises(OSError, match="Can't find or access folder"):
+            tcl_minify_folder("abc123456")
 
     def _test_minifier(
         self, source: str, expected_output: str, validate: bool = True
