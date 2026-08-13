@@ -259,16 +259,14 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
             ptcl_memcpy(path, search_query, folder_size);
             ptcl_memcpy(path + folder_size, file_data.cFileName, file_name_size + 1);
 
-            if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-                if (_has_tcl_file_ext(file_data.cFileName, file_name_size)) {
-                    if (_tcl_minify_file(path)) {
-                        free(search_query);
-                        ReverseLinkedList_clear(folders_to_visit_stack);
-                        return 2;
-                    }
-                }
-            } else {
+            if (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
                 folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
+            } else if (_has_tcl_file_ext(file_data.cFileName, file_name_size)) {
+                if (_tcl_minify_file(path)) {
+                    free(search_query);
+                    ReverseLinkedList_clear(folders_to_visit_stack);
+                    return 2;
+                }
             }
         } while (ptcl_FindNextFile(folder_reader, &file_data));
 
@@ -288,13 +286,11 @@ static inline int _tcl_minify_folder(const ptcl_char *search_path, size_t search
 
             if (dp->d_type == DT_DIR) {
                 folders_to_visit_stack = ReverseLinkedList_append(folders_to_visit_stack, path, path_size);
-            } else {
-                if (_has_tcl_file_ext(dp->d_name, file_name_size)) {
-                    if (_tcl_minify_file(path)) {
-                        free(search_query);
-                        ReverseLinkedList_clear(folders_to_visit_stack);
-                        return 2;
-                    }
+            } else if (_has_tcl_file_ext(dp->d_name, file_name_size)) {
+                if (_tcl_minify_file(path)) {
+                    free(search_query);
+                    ReverseLinkedList_clear(folders_to_visit_stack);
+                    return 2;
                 }
             }
         }
