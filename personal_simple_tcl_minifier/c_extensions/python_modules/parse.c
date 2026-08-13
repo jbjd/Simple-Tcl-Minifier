@@ -91,6 +91,7 @@ static int _tcl_minify_file(const ptcl_char *path) {
 
     const size_t read_bytes = fread(source, sizeof(char), file_size, fp);
     if (unlikely(ferror(fp))) {
+        free(source);
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error reading TCL file");
         return 1;
@@ -100,7 +101,7 @@ static int _tcl_minify_file(const ptcl_char *path) {
     char *minified_source = tcl_minify(source, read_bytes, &minified_size);
     free(source);
 
-    if (ftruncate(fileno(fp), 0) < 0) {
+    if (unlikely(ftruncate(fileno(fp), 0) < 0)) {
         fclose(fp);
         PyErr_SetString(PyExc_OSError, "Error truncating TCL file");
         return 1;
