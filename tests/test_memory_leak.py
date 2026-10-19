@@ -36,7 +36,6 @@ class TestLeaks(MemoryLeakTestCase):
         with TmpTclFile(TestFile("三島", self.sample_large_tcl_script)) as tmp_file:
             self.execute(tcl_minify_file, tmp_file)
 
-    # TODO: move duplicated tmp file/folder setup to test utils
     def test_tcl_minify_folder(self) -> None:
         starting_content: bytes = self.sample_large_tcl_script
 
