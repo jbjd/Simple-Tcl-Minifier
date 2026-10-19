@@ -1,4 +1,4 @@
-clang-format==23.1.0
+clang-format>=23.1.0,<23.2.0
 codespell==2.4.3
-ruff==0.16.5
+ruff==0.17.1
 setuptools>=83.0.0
